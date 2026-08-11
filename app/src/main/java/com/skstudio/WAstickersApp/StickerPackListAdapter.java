@@ -11,6 +11,7 @@ package com.skstudio.WAstickersApp;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.text.format.Formatter;
 import android.util.TypedValue;
@@ -27,6 +28,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.drawee.view.SimpleDraweeView;
 import com.google.android.material.button.MaterialButton;
 
@@ -159,7 +162,12 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 SimpleDraweeView rowImage = viewHolder.stickerImages.get(i);
                 if (i < actualNumberOfStickersToShow) {
                     rowImage.setVisibility(View.VISIBLE);
-                    rowImage.setImageURI(StickerPackLoader.getStickerUri(context, pack, pack.getStickers().get(i)));
+                    Uri uri = StickerPackLoader.getStickerUri(context, pack, pack.getStickers().get(i));
+                    DraweeController controller = Fresco.newDraweeControllerBuilder()
+                            .setUri(uri)
+                            .setAutoPlayAnimations(true)
+                            .build();
+                    rowImage.setController(controller);
                     
                     // Apply dynamic margins
                     LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) rowImage.getLayoutParams();
