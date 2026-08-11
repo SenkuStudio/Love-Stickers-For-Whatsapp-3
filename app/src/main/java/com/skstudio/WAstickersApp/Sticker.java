@@ -18,6 +18,7 @@ class Sticker implements Parcelable {
     final List<String> emojis;
     final String imageUrl;
     long size;
+    boolean isFeatured;
 
     Sticker(String imageFileName, List<String> emojis) {
         this(imageFileName, emojis, null);
@@ -34,6 +35,7 @@ class Sticker implements Parcelable {
         emojis = in.createStringArrayList();
         imageUrl = in.readString();
         size = in.readLong();
+        isFeatured = in.readByte() != 0;
     }
 
     public static final Creator<Sticker> CREATOR = new Creator<Sticker>() {
@@ -63,5 +65,6 @@ class Sticker implements Parcelable {
         dest.writeStringList(emojis);
         dest.writeString(imageUrl);
         dest.writeLong(size);
+        dest.writeByte((byte) (isFeatured ? 1 : 0));
     }
 }

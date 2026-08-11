@@ -169,7 +169,20 @@ class StickerPackLoader {
 
                     String slug = item.getString("slug");
                     String imageUrl = item.getString("image_url");
-                    pack.getStickers().add(new Sticker(slug + ".webp", Collections.singletonList("❤️"), imageUrl));
+                    boolean isFeatured = item.optBoolean("is_featured", false);
+                    Sticker sticker = new Sticker(slug + ".webp", Collections.singletonList("❤️"), imageUrl);
+                    sticker.isFeatured = isFeatured;
+                    if (isFeatured) {
+                        try {
+                            // If it's featured, it's animated, so the pack must be animated too.
+                            java.lang.reflect.Field field = StickerPack.class.getDeclaredField("animatedStickerPack");
+                            field.setAccessible(true);
+                            field.setBoolean(pack, true);
+                        } catch (Exception e) {
+                            Log.e("StickerPackLoader", "Error setting animatedStickerPack", e);
+                        }
+                    }
+                    pack.getStickers().add(sticker);
                 }
                 
                 stickerPackList.addAll(packMap.values());
@@ -228,6 +241,7 @@ class StickerPackLoader {
                     JSONObject stickerJson = new JSONObject();
                     stickerJson.put("image_file", sticker.imageFileName);
                     stickerJson.put("image_url", sticker.imageUrl);
+                    stickerJson.put("is_featured", sticker.isFeatured);
                     JSONArray emojisArray = new JSONArray();
                     for (String emoji : sticker.emojis) {
                         emojisArray.put(emoji);
@@ -290,6 +304,7 @@ class StickerPackLoader {
                             new ArrayList<>(),
                             stickerJson.optString("image_url", null)
                     );
+                    sticker.isFeatured = stickerJson.optBoolean("is_featured", false);
                     JSONArray emojisArray = stickerJson.getJSONArray("emojis");
                     for (int k = 0; k < emojisArray.length(); k++) {
                         sticker.emojis.add(emojisArray.getString(k));
@@ -341,18 +356,28 @@ class StickerPackLoader {
                                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                                 urlConnection.connect();
                                 try (InputStream input = urlConnection.getInputStream()) {
-                                    Bitmap bitmap = BitmapFactory.decodeStream(input);
-                                    if (bitmap != null) {
-                                        // Process and export the sticker using the helper
-                                        Bitmap finalBitmap = StickerExportHelper.prepareSticker(bitmap);
+                                    if (sticker.isFeatured) {
                                         try (FileOutputStream output = new FileOutputStream(outputFile)) {
-                                            long limit = stickerPack.animatedStickerPack ? 500 * 1024 : 100 * 1024;
-                                            StickerExportHelper.exportToWebP(finalBitmap, output, (int) limit);
+                                            byte[] bufferBytes = new byte[16384];
+                                            int read;
+                                            while ((read = input.read(bufferBytes)) != -1) {
+                                                output.write(bufferBytes, 0, read);
+                                            }
                                         }
-                                        if (finalBitmap != bitmap) {
-                                            finalBitmap.recycle();
+                                    } else {
+                                        Bitmap bitmap = BitmapFactory.decodeStream(input);
+                                        if (bitmap != null) {
+                                            // Process and export the sticker using the helper
+                                            Bitmap finalBitmap = StickerExportHelper.prepareSticker(bitmap);
+                                            try (FileOutputStream output = new FileOutputStream(outputFile)) {
+                                                long limit = stickerPack.animatedStickerPack ? 500 * 1024 : 100 * 1024;
+                                                StickerExportHelper.exportToWebP(finalBitmap, output, (int) limit);
+                                            }
+                                            if (finalBitmap != bitmap) {
+                                                finalBitmap.recycle();
+                                            }
+                                            bitmap.recycle();
                                         }
-                                        bitmap.recycle();
                                     }
                                 }
                             } catch (Exception e) {
