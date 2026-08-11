@@ -321,7 +321,15 @@ class StickerPackLoader {
         }
     }
 
+    public interface ProgressListener {
+        void onProgressUpdate(int percent);
+    }
+
     public static void downloadStickers(Context context, StickerPack stickerPack, Runnable callback) {
+        downloadStickers(context, stickerPack, null, callback);
+    }
+
+    public static void downloadStickers(Context context, StickerPack stickerPack, ProgressListener progressListener, Runnable callback) {
         new Thread(() -> {
             try {
                 // Save metadata first so ContentProvider can see it if it reloads
@@ -332,7 +340,11 @@ class StickerPackLoader {
                     stickerDir.mkdirs();
                 }
 
-                for (Sticker sticker : stickerPack.getStickers()) {
+                List<Sticker> stickers = stickerPack.getStickers();
+                int totalCount = stickers.size() + 1; // +1 for tray icon
+                int completedCount = 0;
+
+                for (Sticker sticker : stickers) {
                     File outputFile = new File(stickerDir, sticker.imageFileName);
                     boolean needsDownload = !outputFile.exists();
                     if (!needsDownload) {
@@ -388,6 +400,11 @@ class StickerPackLoader {
                     if (outputFile.exists()) {
                         sticker.setSize(outputFile.length());
                     }
+                    completedCount++;
+                    if (progressListener != null) {
+                        int progress = (int) ((completedCount / (float) totalCount) * 100);
+                        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> progressListener.onProgressUpdate(progress));
+                    }
                 }
 
                 File trayFile = new File(stickerDir, stickerPack.trayImageFile);
@@ -426,6 +443,11 @@ class StickerPackLoader {
                             }
                             bitmap.recycle();
                         }
+                }
+                
+                completedCount++;
+                if (progressListener != null) {
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> progressListener.onProgressUpdate(100));
                 }
                 
                 // Recalculate total size

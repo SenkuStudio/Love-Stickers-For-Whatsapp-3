@@ -60,6 +60,9 @@ public class StickerPackListActivity extends AddStickerPackActivity {
     private RewardedAdManager rewardedAdManager;
     private View loadingOverlay;
     private com.facebook.shimmer.ShimmerFrameLayout shimmerFrameLayout;
+    private View downloadProgressContainer;
+    private android.widget.ProgressBar downloadProgressBar;
+    private android.widget.TextView downloadProgressText;
     private SwipeRefreshLayout swipeRefreshLayout;
     private View errorStateView;
     private int currentPage = 1;
@@ -113,6 +116,9 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         mAdView1 = findViewById(R.id.adView7);
         loadingOverlay = findViewById(R.id.loading_overlay);
         shimmerFrameLayout = findViewById(R.id.shimmer_view_container);
+        downloadProgressContainer = findViewById(R.id.download_progress_container);
+        downloadProgressBar = findViewById(R.id.download_progress_bar);
+        downloadProgressText = findViewById(R.id.download_progress_text);
         emptyStateView = findViewById(R.id.empty_state_view);
         errorStateView = findViewById(R.id.error_state_view);
         findViewById(R.id.retry_button).setOnClickListener(v -> refreshStickerPacks());
@@ -532,16 +538,33 @@ public class StickerPackListActivity extends AddStickerPackActivity {
     private final StickerPackListAdapter.OnAddButtonClickedListener onAddButtonClickedListener =
             pack -> {
                 if (!isInternetAvailable()) {
-                    Toast.makeText(this, "Internet not available", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.internet_not_available, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 if (!StickerPackLoader.isStickerPackDownloaded(this, pack)) {
-                    showLoader();
-                    Toast.makeText(this, "Downloading stickers, please wait...", Toast.LENGTH_SHORT).show();
-                    StickerPackLoader.downloadStickers(this, pack, () -> {
-                        hideLoader();
-                        // Proceed with ad after download
+                    showDownloadProgress();
+                    StickerPackLoader.downloadStickers(this, pack, progress -> {
+                        if (downloadProgressBar != null) {
+                            if (loadingOverlay.getVisibility() == View.VISIBLE) {
+                                hideLoader();
+                            }
+                            android.animation.ObjectAnimator.ofInt(downloadProgressBar, "progress", downloadProgressBar.getProgress(), progress)
+                                    .setDuration(400)
+                                    .start();
+                            try {
+                                String currentText = downloadProgressText.getText().toString().replace("%", "");
+                                int startValue = currentText.isEmpty() ? 0 : Integer.parseInt(currentText);
+                                android.animation.ValueAnimator textAnimator = android.animation.ValueAnimator.ofInt(startValue, progress);
+                                textAnimator.setDuration(400);
+                                textAnimator.addUpdateListener(animation1 -> downloadProgressText.setText(getString(R.string.percent_format, (int) animation1.getAnimatedValue())));
+                                textAnimator.start();
+                            } catch (NumberFormatException e) {
+                                downloadProgressText.setText(getString(R.string.percent_format, progress));
+                            }
+                        }
+                    }, () -> {
+                        hideDownloadProgress();
                         showAdAndAdd(pack);
                     });
                 } else {
@@ -576,6 +599,21 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         }
         if (shimmerFrameLayout != null) {
             shimmerFrameLayout.stopShimmer();
+        }
+    }
+
+    private void showDownloadProgress() {
+        hideLoader();
+        if (downloadProgressContainer != null) {
+            downloadProgressContainer.setVisibility(View.VISIBLE);
+            downloadProgressBar.setProgress(0);
+            downloadProgressText.setText("0%");
+        }
+    }
+
+    private void hideDownloadProgress() {
+        if (downloadProgressContainer != null) {
+            downloadProgressContainer.setVisibility(View.GONE);
         }
     }
 

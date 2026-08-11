@@ -90,6 +90,9 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private boolean isAdShowing = false;
     private boolean isRewardEarned = false;
     private View loadingOverlay;
+    private View downloadProgressContainer;
+    private android.widget.ProgressBar downloadProgressBar;
+    private TextView downloadProgressText;
     private com.facebook.shimmer.ShimmerFrameLayout shimmerFrameLayout;
     private String pendingIdentifier;
     private String pendingName;
@@ -119,6 +122,9 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         recyclerView.addOnScrollListener(dividerScrollListener);
         divider = findViewById(R.id.divider);
         loadingOverlay = findViewById(R.id.loading_overlay);
+        downloadProgressContainer = findViewById(R.id.download_progress_container);
+        downloadProgressBar = findViewById(R.id.download_progress_bar);
+        downloadProgressText = findViewById(R.id.download_progress_text);
         if (stickerPreviewAdapter == null) {
             stickerPreviewAdapter = new StickerPreviewAdapter(getLayoutInflater(), R.drawable.sticker_error, getResources().getDimensionPixelSize(R.dimen.sticker_pack_details_image_size), getResources().getDimensionPixelSize(R.dimen.sticker_pack_details_image_padding), stickerPack, expandedStickerView);
             recyclerView.setAdapter(stickerPreviewAdapter);
@@ -130,11 +136,10 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         addButton.setOnClickListener(v -> {
             // ❌ No Internet → Stop everything
             if (!isInternetAvailable()) {
-                Toast.makeText(this, "Internet not available", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.internet_not_available, Toast.LENGTH_SHORT).show();
                 return;
            }
 
-            showLoader();
            showRewardedAndAddSticker(stickerPack.identifier, stickerPack.name);
         });
 
@@ -177,16 +182,54 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         }
     }
 
+    private void showDownloadProgress() {
+        hideLoader(); // Ensure shimmer is hidden
+        if (downloadProgressContainer != null) {
+            downloadProgressContainer.setVisibility(View.VISIBLE);
+            downloadProgressBar.setProgress(0);
+            downloadProgressText.setText("0%");
+        }
+    }
+
+    private void hideDownloadProgress() {
+        if (downloadProgressContainer != null) {
+            downloadProgressContainer.setVisibility(View.GONE);
+        }
+    }
+
     private void showRewardedAndAddSticker(String identifier, String stickerPackName) {
         if (isAdShowing) return;
 
         if (!StickerPackLoader.isStickerPackDownloaded(this, stickerPack)) {
             pendingIdentifier = identifier;
             pendingName = stickerPackName;
-            showLoader();
-            Toast.makeText(this, "Downloading stickers, please wait...", Toast.LENGTH_SHORT).show();
-            StickerPackLoader.downloadStickers(this, stickerPack, () -> {
-                hideLoader();
+            showDownloadProgress();
+            StickerPackLoader.downloadStickers(this, stickerPack, progress -> {
+                if (downloadProgressBar != null) {
+                    // Check if shimmer is still somehow active and kill it
+                    if (loadingOverlay.getVisibility() == View.VISIBLE) {
+                        hideLoader();
+                    }
+                    
+                    // Smoothly animate progress bar
+                    android.animation.ObjectAnimator.ofInt(downloadProgressBar, "progress", downloadProgressBar.getProgress(), progress)
+                        .setDuration(400)
+                        .start();
+                    
+                    // Smoothly animate percentage text
+                    try {
+                        String currentText = downloadProgressText.getText().toString().replace("%", "");
+                        int startValue = currentText.isEmpty() ? 0 : Integer.parseInt(currentText);
+                        android.animation.ValueAnimator textAnimator = android.animation.ValueAnimator.ofInt(startValue, progress);
+                        textAnimator.setDuration(400);
+                        textAnimator.addUpdateListener(animation1 -> downloadProgressText.setText(getString(R.string.percent_format, (int) animation1.getAnimatedValue())));
+                        textAnimator.start();
+                    } catch (NumberFormatException e) {
+                        downloadProgressText.setText(getString(R.string.percent_format, progress));
+                    }
+                }
+            }, () -> {
+                hideDownloadProgress();
                 if (pendingIdentifier != null && !isAdShowing) {
                     showRewardedAndAddSticker(pendingIdentifier, pendingName);
                 }
@@ -274,7 +317,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
                 hideLoader();
                 if (!isRewardEarned) {
                     Toast.makeText(StickerPackDetailsActivity.this,
-                            "Watch full ad to unlock stickers",
+                            R.string.watch_ad_to_unlock,
                             Toast.LENGTH_SHORT).show();
                 }
 

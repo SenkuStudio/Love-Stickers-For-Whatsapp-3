@@ -69,4 +69,8 @@
     <string name="settings_clear_cache">Clear Cache</string>
     <string name="cache_cleared">Cache cleared successfully</string>
     <string name="loading_footer_message">Stickers are loading slowly. Please check your internet connection or switch to another network.</string>
+    <string name="downloading_stickers">Downloading Stickers...</string>
+    <string name="watch_ad_to_unlock">Watch full ad to unlock stickers</string>
+    <string name="internet_not_available">Internet not available</string>
+    <string name="percent_format">%1$d%%</string>
 </resources>
