@@ -73,4 +73,6 @@
     <string name="watch_ad_to_unlock">Watch full ad to unlock stickers</string>
     <string name="internet_not_available">Internet not available</string>
     <string name="percent_format">%1$d%%</string>
+    <string name="long_press_to_share">Long press to share</string>
+    <string name="all_packs">All Packs</string>
 </resources>

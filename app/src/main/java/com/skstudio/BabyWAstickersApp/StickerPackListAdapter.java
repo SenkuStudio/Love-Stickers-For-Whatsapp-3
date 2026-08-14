@@ -42,6 +42,13 @@ import java.util.Objects;
 public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_ITEM = 0;
     private static final int VIEW_TYPE_LOADING = 1;
+    private static final int VIEW_TYPE_AD = 2;
+    private static final int AD_INTERVAL = 5;
+
+    private final String[] adUnitIds = {
+            "ca-app-pub-6979979912689100/5718531385",
+            "ca-app-pub-6979979912689100/4342016325"
+    };
 
     @NonNull
     private List<StickerPack> stickerPacks;
@@ -50,6 +57,7 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     @NonNull
     private final OnAddButtonClickedListener onAddButtonClickedListener;
     private FavoriteManager favoriteManager;
+    private final java.util.Map<Integer, com.google.android.gms.ads.nativead.NativeAd> adCache = new java.util.HashMap<>();
     private int maxNumberOfStickersInARow;
     private int minMarginBetweenImages;
     private int previewSize;
@@ -65,62 +73,29 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     public void updateData(List<StickerPack> newList) {
         if (newList == null) {
-            int size = this.stickerPacks.size();
             this.stickerPacks = new ArrayList<>();
             this.stickerPacksFull = new ArrayList<>();
-            notifyItemRangeRemoved(0, size);
-            return;
+        } else {
+            this.stickerPacks = new ArrayList<>(newList);
+            this.stickerPacksFull = new ArrayList<>(newList);
         }
-
-        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new StickerPackDiffCallback(this.stickerPacks, newList));
-        this.stickerPacks.clear();
-        this.stickerPacks.addAll(newList);
-        this.stickerPacksFull = new ArrayList<>(newList);
-        diffResult.dispatchUpdatesTo(this);
-    }
-
-    private static class StickerPackDiffCallback extends DiffUtil.Callback {
-        private final List<StickerPack> oldList;
-        private final List<StickerPack> newList;
-
-        StickerPackDiffCallback(List<StickerPack> oldList, List<StickerPack> newList) {
-            this.oldList = oldList;
-            this.newList = newList;
-        }
-
-        @Override
-        public int getOldListSize() {
-            return oldList.size();
-        }
-
-        @Override
-        public int getNewListSize() {
-            return newList.size();
-        }
-
-        @Override
-        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-            return Objects.equals(oldList.get(oldItemPosition).identifier, newList.get(newItemPosition).identifier);
-        }
-
-        @Override
-        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-            StickerPack oldPack = oldList.get(oldItemPosition);
-            StickerPack newPack = newList.get(newItemPosition);
-            return Objects.equals(oldPack.identifier, newPack.identifier) &&
-                    Objects.equals(oldPack.name, newPack.name) &&
-                    oldPack.getIsWhitelisted() == newPack.getIsWhitelisted() &&
-                    oldPack.isDownloaded() == newPack.isDownloaded() &&
-                    oldPack.animatedStickerPack == newPack.animatedStickerPack;
-        }
+        adCache.clear(); // Clear cache when data changes significantly
+        notifyDataSetChanged();
     }
 
     @Override
     public int getItemViewType(int position) {
-        if (showLoadingFooter && position == stickerPacks.size()) {
+        if (showLoadingFooter && position == getItemCount() - 1) {
             return VIEW_TYPE_LOADING;
         }
+        if (position > 0 && (position + 1) % (AD_INTERVAL + 1) == 0) {
+            return VIEW_TYPE_AD;
+        }
         return VIEW_TYPE_ITEM;
+    }
+
+    private int getRealPosition(int position) {
+        return position - (position / (AD_INTERVAL + 1));
     }
 
     @NonNull
@@ -135,13 +110,21 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             View view = layoutInflater.inflate(R.layout.layout_loading_footer, viewGroup, false);
             return new LoadingViewHolder(view);
         }
+        if (viewType == VIEW_TYPE_AD) {
+            View view = layoutInflater.inflate(R.layout.layout_native_ad, viewGroup, false);
+            return new AdViewHolder(view);
+        }
         final View stickerPackRow = layoutInflater.inflate(R.layout.sticker_packs_list_item, viewGroup, false);
         return new StickerPackListItemViewHolder(stickerPackRow);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final RecyclerView.ViewHolder holder, final int index) {
+    public void onBindViewHolder(@NonNull final RecyclerView.ViewHolder holder, final int position) {
         if (holder instanceof StickerPackListItemViewHolder) {
+            int index = getRealPosition(position);
+            if (index < 0 || index >= stickerPacks.size()) {
+                return;
+            }
             StickerPackListItemViewHolder viewHolder = (StickerPackListItemViewHolder) holder;
             StickerPack pack = stickerPacks.get(index);
             final Context context = viewHolder.publisherView.getContext();
@@ -206,7 +189,104 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 favoriteManager.toggleFavorite(pack.identifier);
                 updateFavoriteUI(viewHolder.favoriteButton, pack);
             });
+        } else if (holder instanceof AdViewHolder) {
+            AdViewHolder adViewHolder = (AdViewHolder) holder;
+            loadNativeAdForViewHolder(adViewHolder, position);
         }
+    }
+
+    private void loadNativeAdForViewHolder(AdViewHolder holder, int position) {
+        if (adCache.containsKey(position)) {
+            com.google.android.gms.ads.nativead.NativeAd cachedAd = adCache.get(position);
+            View shimmerLayout = holder.itemView.findViewById(R.id.shimmer_layout);
+            View adContent = holder.itemView.findViewById(R.id.ad_content);
+            if (shimmerLayout != null) shimmerLayout.setVisibility(View.GONE);
+            if (adContent != null) adContent.setVisibility(View.VISIBLE);
+            populateNativeAdView(cachedAd, (com.google.android.gms.ads.nativead.NativeAdView) holder.itemView);
+            return;
+        }
+
+        Context context = holder.itemView.getContext();
+        int adIndex = (position / (AD_INTERVAL + 1)) % adUnitIds.length;
+        String adUnitId = adUnitIds[adIndex];
+
+        View shimmerLayout = holder.itemView.findViewById(R.id.shimmer_layout);
+        View adContent = holder.itemView.findViewById(R.id.ad_content);
+
+        if (shimmerLayout != null) shimmerLayout.setVisibility(View.VISIBLE);
+        if (adContent != null) adContent.setVisibility(View.INVISIBLE);
+
+        com.google.android.gms.ads.AdLoader adLoader = new com.google.android.gms.ads.AdLoader.Builder(context, adUnitId)
+                .forNativeAd(nativeAd -> {
+                    if (holder.getAdapterPosition() == RecyclerView.NO_POSITION) {
+                        nativeAd.destroy();
+                        return;
+                    }
+                    adCache.put(position, nativeAd);
+                    if (shimmerLayout != null) shimmerLayout.setVisibility(View.GONE);
+                    if (adContent != null) adContent.setVisibility(View.VISIBLE);
+                    populateNativeAdView(nativeAd, (com.google.android.gms.ads.nativead.NativeAdView) holder.itemView);
+                })
+                .withAdListener(new com.google.android.gms.ads.AdListener() {
+                    @Override
+                    public void onAdFailedToLoad(@NonNull com.google.android.gms.ads.LoadAdError adError) {
+                        holder.itemView.setVisibility(View.GONE);
+                        ViewGroup.LayoutParams params = holder.itemView.getLayoutParams();
+                        params.height = 0;
+                        holder.itemView.setLayoutParams(params);
+                    }
+                })
+                .build();
+        adLoader.loadAd(new com.google.android.gms.ads.AdRequest.Builder().build());
+    }
+
+    private void populateNativeAdView(com.google.android.gms.ads.nativead.NativeAd nativeAd, com.google.android.gms.ads.nativead.NativeAdView adView) {
+        adView.setVisibility(View.VISIBLE);
+        ViewGroup.LayoutParams params = adView.getLayoutParams();
+        params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        adView.setLayoutParams(params);
+
+        adView.setHeadlineView(adView.findViewById(R.id.ad_headline));
+        adView.setBodyView(adView.findViewById(R.id.ad_body));
+        adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
+        adView.setIconView(adView.findViewById(R.id.ad_app_icon));
+        adView.setAdvertiserView(adView.findViewById(R.id.ad_advertiser));
+        adView.setMediaView(adView.findViewById(R.id.ad_media));
+
+        ((android.widget.TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
+        if (adView.getMediaView() != null) {
+            adView.getMediaView().setMediaContent(nativeAd.getMediaContent());
+        }
+
+        if (nativeAd.getBody() == null) {
+            adView.getBodyView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getBodyView().setVisibility(View.VISIBLE);
+            ((android.widget.TextView) adView.getBodyView()).setText(nativeAd.getBody());
+        }
+
+        if (nativeAd.getCallToAction() == null) {
+            adView.getCallToActionView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getCallToActionView().setVisibility(View.VISIBLE);
+            ((android.widget.Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+        }
+
+        if (nativeAd.getIcon() == null) {
+            adView.getIconView().setVisibility(View.GONE);
+        } else {
+            ((android.widget.ImageView) adView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
+            adView.getIconView().setVisibility(View.VISIBLE);
+        }
+
+        if (nativeAd.getAdvertiser() == null) {
+            adView.getAdvertiserView().setVisibility(View.INVISIBLE);
+        } else {
+            ((android.widget.TextView) adView.getAdvertiserView()).setText(nativeAd.getAdvertiser());
+            adView.getAdvertiserView().setVisibility(View.VISIBLE);
+        }
+
+        adView.setNativeAd(nativeAd);
     }
 
     @Override
@@ -254,7 +334,11 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     @Override
     public int getItemCount() {
-        return stickerPacks.size() + (showLoadingFooter ? 1 : 0);
+        int count = stickerPacks.size();
+        if (count > 0) {
+            count += count / AD_INTERVAL;
+        }
+        return count + (showLoadingFooter ? 1 : 0);
     }
 
     void setImageRowSpec(int maxNumberOfStickersInARow, int minMarginBetweenImages, int previewSize) {
@@ -277,11 +361,13 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     public void showLoadingFooter(boolean show) {
         if (this.showLoadingFooter != show) {
+            int oldSize = getItemCount();
             this.showLoadingFooter = show;
+            int newSize = getItemCount();
             if (show) {
-                notifyItemInserted(stickerPacks.size());
+                notifyItemInserted(oldSize);
             } else {
-                notifyItemRemoved(stickerPacks.size());
+                notifyItemRemoved(oldSize - 1);
             }
         }
     }
@@ -319,8 +405,23 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     // Removed redundant updateData method to keep only the DiffUtil version
 
 
+    public void releaseAds() {
+        for (com.google.android.gms.ads.nativead.NativeAd ad : adCache.values()) {
+            if (ad != null) {
+                ad.destroy();
+            }
+        }
+        adCache.clear();
+    }
+
     static class LoadingViewHolder extends RecyclerView.ViewHolder {
         LoadingViewHolder(View itemView) {
+            super(itemView);
+        }
+    }
+
+    static class AdViewHolder extends RecyclerView.ViewHolder {
+        AdViewHolder(View itemView) {
             super(itemView);
         }
     }

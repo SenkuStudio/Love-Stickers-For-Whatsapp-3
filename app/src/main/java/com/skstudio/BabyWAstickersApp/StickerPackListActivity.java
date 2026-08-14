@@ -18,6 +18,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -44,7 +45,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import android.view.Menu;
+import com.google.android.gms.ads.nativead.NativeAd;
+import com.google.android.gms.ads.nativead.NativeAdView;
+import android.widget.FrameLayout;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdLoader;
+import com.google.android.gms.ads.LoadAdError;
+import android.view.LayoutInflater;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.RatingBar;
 
 
 public class StickerPackListActivity extends AddStickerPackActivity {
@@ -55,6 +65,9 @@ public class StickerPackListActivity extends AddStickerPackActivity {
     private StickerPackListAdapter allStickerPacksListAdapter;
     private WhiteListCheckAsyncTask whiteListCheckAsyncTask;
     private ArrayList<StickerPack> stickerPackList;
+    private RecyclerView categoryRecyclerView;
+    private CategoryAdapter categoryAdapter;
+    private List<StickerPack> horizontalStickerPacks = new ArrayList<>();
     private AdView mAdView;
     private AdView mAdView1;
     private RewardedAdManager rewardedAdManager;
@@ -123,6 +136,23 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         errorStateView = findViewById(R.id.error_state_view);
         findViewById(R.id.retry_button).setOnClickListener(v -> refreshStickerPacks());
 
+        categoryRecyclerView = findViewById(R.id.category_list);
+        categoryAdapter = new CategoryAdapter(horizontalStickerPacks, new CategoryAdapter.OnStickerPackClickListener() {
+            @Override
+            public void onStickerPackClick(StickerPack pack) {
+                Intent intent = new Intent(StickerPackListActivity.this, StickerPackDetailsActivity.class);
+                intent.putExtra(StickerPackDetailsActivity.EXTRA_SHOW_UP_BUTTON, true);
+                intent.putExtra(StickerPackDetailsActivity.EXTRA_STICKER_PACK_DATA, pack);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onAllClick() {
+                filterByCategory("ALL");
+            }
+        });
+        categoryRecyclerView.setAdapter(categoryAdapter);
+
         packRecyclerView = findViewById(R.id.sticker_pack_list);
         packRecyclerView.setHasFixedSize(true);
         packRecyclerView.setItemViewCacheSize(20);
@@ -158,8 +188,12 @@ public class StickerPackListActivity extends AddStickerPackActivity {
             new RefreshAsyncTask(this).execute();
         }
         AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
-        mAdView1.loadAd(adRequest);
+        if (mAdView != null) {
+            mAdView.loadAd(adRequest);
+        }
+        if (mAdView1 != null) {
+            mAdView1.loadAd(adRequest);
+        }
         loadNativeAd("ca-app-pub-6979979912689100/4535593027", findViewById(R.id.native_ad_container));
         updateAdVisibility(R.id.nav_home);
         MobileAds.initialize(this, initializationStatus -> {});
@@ -235,6 +269,9 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         slowLoadingRunnable = new Runnable() {
             @Override
             public void run() {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
                 if (isLoading && (originalStickerPackList == null || originalStickerPackList.isEmpty())) {
                     if (loadAttemptCount <= 1) {
                         // First time, show retry button
@@ -250,8 +287,10 @@ public class StickerPackListActivity extends AddStickerPackActivity {
                         swipeRefreshLayout.setVisibility(View.GONE);
                     } else {
                         // Subsequent attempts: keep shimmer and show toast again
-                        Toast.makeText(StickerPackListActivity.this, R.string.loading_footer_message, Toast.LENGTH_LONG).show();
-                        slowLoadingHandler.postDelayed(this, 5000);
+                        if (!isFinishing() && !isDestroyed()) {
+                            Toast.makeText(StickerPackListActivity.this, R.string.loading_footer_message, Toast.LENGTH_LONG).show();
+                            slowLoadingHandler.postDelayed(this, 5000);
+                        }
                     }
                 }
             }
@@ -289,7 +328,7 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         @Override
         protected void onPostExecute(StickerPackLoader.FetchResult result) {
             StickerPackListActivity activity = activityRef.get();
-            if (activity != null) {
+            if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
                 activity.isLoading = false;
                 activity.swipeRefreshLayout.setRefreshing(false);
                 if (activity.slowLoadingRunnable != null) {
@@ -308,9 +347,19 @@ public class StickerPackListActivity extends AddStickerPackActivity {
                         }
                     }
                     activity.originalStickerPackList = new ArrayList<>(activity.packMap.values());
+                    
+                    // Update horizontal list
+                    activity.horizontalStickerPacks.clear();
+                    activity.horizontalStickerPacks.addAll(activity.originalStickerPackList);
+                    if (activity.categoryAdapter != null) {
+                        activity.categoryAdapter.notifyDataSetChanged();
+                    }
+
                     activity.filterByCategory(activity.currentCategory);
                     // Save to cache
-                    StickerPackLoader.saveRemotePacks(activity, activity.originalStickerPackList);
+                    if (activity.originalStickerPackList != null && !activity.originalStickerPackList.isEmpty()) {
+                        StickerPackLoader.saveRemotePacks(activity, activity.originalStickerPackList);
+                    }
                 } else if (activity.originalStickerPackList == null || activity.originalStickerPackList.isEmpty()) {
                     // Show error state only if it's the first attempt or if not loading slowly
                     if (activity.loadAttemptCount <= 1) {
@@ -376,6 +425,9 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         if (mAdView1 != null) {
             mAdView1.destroy();
         }
+        if (allStickerPacksListAdapter != null) {
+            allStickerPacksListAdapter.releaseAds();
+        }
         super.onDestroy();
         if (whiteListCheckAsyncTask != null && !whiteListCheckAsyncTask.isCancelled()) {
             whiteListCheckAsyncTask.cancel(true);
@@ -431,6 +483,16 @@ public class StickerPackListActivity extends AddStickerPackActivity {
                 if (emptyStateView != null) emptyStateView.setVisibility(View.GONE);
                 swipeRefreshLayout.setVisibility(View.VISIBLE);
             }
+        } else {
+            stickerPackList = new ArrayList<>();
+            for (StickerPack pack : originalStickerPackList) {
+                if (pack != null && category.equals(pack.category)) {
+                    stickerPackList.add(pack);
+                }
+            }
+            if (emptyStateView != null) emptyStateView.setVisibility(View.GONE);
+            swipeRefreshLayout.setVisibility(View.VISIBLE);
+            if (errorStateView != null) errorStateView.setVisibility(View.GONE);
         }
         if (allStickerPacksListAdapter != null) {
             allStickerPacksListAdapter.setData(stickerPackList);
@@ -440,7 +502,7 @@ public class StickerPackListActivity extends AddStickerPackActivity {
 
     private void updateActionBarTitle() {
         if (getSupportActionBar() != null) {
-            if (stickerPackList != null) {
+            if (stickerPackList != null && !stickerPackList.isEmpty()) {
                 getSupportActionBar().setTitle(getResources().getQuantityString(R.plurals.title_activity_sticker_packs_list, stickerPackList.size()));
             } else {
                 getSupportActionBar().setTitle(R.string.app_name);
@@ -544,7 +606,7 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         @Override
         protected void onPostExecute(StickerPackLoader.FetchResult result) {
             StickerPackListActivity activity = activityRef.get();
-            if (activity != null) {
+            if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
                 activity.isLoading = false;
                 if (activity.allStickerPacksListAdapter != null) {
                     activity.allStickerPacksListAdapter.showLoadingFooter(false);
@@ -553,6 +615,14 @@ public class StickerPackListActivity extends AddStickerPackActivity {
                     activity.currentPage++;
                     activity.hasNextPage = result.hasNextPage;
                     activity.originalStickerPackList = new ArrayList<>(activity.packMap.values());
+                    
+                    // Update horizontal list
+                    activity.horizontalStickerPacks.clear();
+                    activity.horizontalStickerPacks.addAll(activity.originalStickerPackList);
+                    if (activity.categoryAdapter != null) {
+                        activity.categoryAdapter.notifyDataSetChanged();
+                    }
+
                     activity.filterByCategory(activity.currentCategory);
                 } else {
                     Toast.makeText(activity, "Failed to load more stickers", Toast.LENGTH_SHORT).show();
@@ -572,25 +642,35 @@ public class StickerPackListActivity extends AddStickerPackActivity {
                 if (!StickerPackLoader.isStickerPackDownloaded(this, pack)) {
                     showDownloadProgress();
                     StickerPackLoader.downloadStickers(this, pack, progress -> {
+                        if (isFinishing() || isDestroyed()) return;
                         if (downloadProgressBar != null) {
-                            if (loadingOverlay.getVisibility() == View.VISIBLE) {
+                            if (loadingOverlay != null && loadingOverlay.getVisibility() == View.VISIBLE) {
                                 hideLoader();
                             }
                             android.animation.ObjectAnimator.ofInt(downloadProgressBar, "progress", downloadProgressBar.getProgress(), progress)
                                     .setDuration(400)
                                     .start();
                             try {
-                                String currentText = downloadProgressText.getText().toString().replace("%", "");
-                                int startValue = currentText.isEmpty() ? 0 : Integer.parseInt(currentText);
-                                android.animation.ValueAnimator textAnimator = android.animation.ValueAnimator.ofInt(startValue, progress);
-                                textAnimator.setDuration(400);
-                                textAnimator.addUpdateListener(animation1 -> downloadProgressText.setText(getString(R.string.percent_format, (int) animation1.getAnimatedValue())));
-                                textAnimator.start();
+                                if (downloadProgressText != null) {
+                                    String currentText = downloadProgressText.getText().toString().replace("%", "");
+                                    int startValue = currentText.isEmpty() ? 0 : Integer.parseInt(currentText);
+                                    android.animation.ValueAnimator textAnimator = android.animation.ValueAnimator.ofInt(startValue, progress);
+                                    textAnimator.setDuration(400);
+                                    textAnimator.addUpdateListener(animation1 -> {
+                                        if (!isFinishing() && !isDestroyed() && downloadProgressText != null) {
+                                            downloadProgressText.setText(getString(R.string.percent_format, (int) animation1.getAnimatedValue()));
+                                        }
+                                    });
+                                    textAnimator.start();
+                                }
                             } catch (NumberFormatException e) {
-                                downloadProgressText.setText(getString(R.string.percent_format, progress));
+                                if (downloadProgressText != null) {
+                                    downloadProgressText.setText(getString(R.string.percent_format, progress));
+                                }
                             }
                         }
                     }, () -> {
+                        if (isFinishing() || isDestroyed()) return;
                         hideDownloadProgress();
                         showAdAndAdd(pack);
                     });
@@ -600,14 +680,19 @@ public class StickerPackListActivity extends AddStickerPackActivity {
             };
 
     private void showAdAndAdd(StickerPack pack) {
-        if (rewardedAdManager.isAdLoaded()) {
+        if (isFinishing() || isDestroyed()) return;
+        if (rewardedAdManager != null && rewardedAdManager.isAdLoaded()) {
             rewardedAdManager.showAd(this, rewardItem -> {
-                addStickerPackToWhatsApp(pack.identifier, pack.name);
+                if (!isFinishing() && !isDestroyed()) {
+                    addStickerPackToWhatsApp(pack.identifier, pack.name);
+                }
             });
         } else {
             // If ad is not ready, add the pack directly to ensure good UX, but try loading for next time
             addStickerPackToWhatsApp(pack.identifier, pack.name);
-            rewardedAdManager.loadAd(this);
+            if (rewardedAdManager != null) {
+                rewardedAdManager.loadAd(this);
+            }
         }
     }
 
@@ -642,6 +727,112 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         if (downloadProgressContainer != null) {
             downloadProgressContainer.setVisibility(View.GONE);
         }
+    }
+
+    private void loadNativeAd(String adUnitId, FrameLayout container) {
+        if (container == null || isFinishing() || isDestroyed()) return;
+        AdLoader adLoader = new AdLoader.Builder(this, adUnitId)
+                .forNativeAd(nativeAd -> {
+                    if (container == null || isFinishing() || isDestroyed()) return;
+                    NativeAdView adView = (NativeAdView) LayoutInflater.from(this)
+                            .inflate(R.layout.layout_native_ad, container, false);
+                    populateNativeAdView(nativeAd, adView);
+                    container.removeAllViews();
+                    container.addView(adView);
+                    container.setVisibility(View.VISIBLE);
+                })
+                .withAdListener(new com.google.android.gms.ads.AdListener() {
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError adError) {
+                        if (container != null) {
+                            container.setVisibility(View.GONE);
+                        }
+                    }
+                })
+                .build();
+        adLoader.loadAd(new AdRequest.Builder().build());
+    }
+
+    private void populateNativeAdView(NativeAd nativeAd, NativeAdView adView) {
+        adView.setHeadlineView(adView.findViewById(R.id.ad_headline));
+        adView.setBodyView(adView.findViewById(R.id.ad_body));
+        adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
+        adView.setIconView(adView.findViewById(R.id.ad_app_icon));
+        adView.setAdvertiserView(adView.findViewById(R.id.ad_advertiser));
+        adView.setMediaView(adView.findViewById(R.id.ad_media));
+
+        ((TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
+
+        if (nativeAd.getBody() == null) {
+            adView.getBodyView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getBodyView().setVisibility(View.VISIBLE);
+            ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+        }
+
+        if (nativeAd.getCallToAction() == null) {
+            adView.getCallToActionView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getCallToActionView().setVisibility(View.VISIBLE);
+            ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+        }
+
+        if (nativeAd.getIcon() == null) {
+            View icon = adView.getIconView();
+            if (icon != null) icon.setVisibility(View.GONE);
+        } else {
+            View icon = adView.getIconView();
+            if (icon != null) {
+                ((ImageView) icon).setImageDrawable(nativeAd.getIcon().getDrawable());
+                icon.setVisibility(View.VISIBLE);
+            }
+        }
+
+        if (nativeAd.getStarRating() == null) {
+            View stars = adView.getStarRatingView();
+            if (stars != null) stars.setVisibility(View.INVISIBLE);
+        } else {
+            View stars = adView.getStarRatingView();
+            if (stars != null) {
+                ((RatingBar) stars).setRating(nativeAd.getStarRating().floatValue());
+                stars.setVisibility(View.VISIBLE);
+            }
+        }
+
+        if (nativeAd.getAdvertiser() == null) {
+            View advertiser = adView.getAdvertiserView();
+            if (advertiser != null) advertiser.setVisibility(View.INVISIBLE);
+        } else {
+            View advertiser = adView.getAdvertiserView();
+            if (advertiser != null) {
+                ((TextView) advertiser).setText(nativeAd.getAdvertiser());
+                advertiser.setVisibility(View.VISIBLE);
+            }
+        }
+
+        if (nativeAd.getPrice() == null) {
+            View price = adView.getPriceView();
+            if (price != null) price.setVisibility(View.INVISIBLE);
+        } else {
+            View price = adView.getPriceView();
+            if (price != null) {
+                ((TextView) price).setText(nativeAd.getPrice());
+                price.setVisibility(View.VISIBLE);
+            }
+        }
+
+        if (nativeAd.getStore() == null) {
+            View store = adView.getStoreView();
+            if (store != null) store.setVisibility(View.INVISIBLE);
+        } else {
+            View store = adView.getStoreView();
+            if (store != null) {
+                ((TextView) store).setText(nativeAd.getStore());
+                store.setVisibility(View.VISIBLE);
+            }
+        }
+
+        adView.setNativeAd(nativeAd);
     }
 
     private boolean isInternetAvailable() {
@@ -815,7 +1006,7 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         @Override
         protected void onPostExecute(List<StickerPack> stickerPackList) {
             final StickerPackListActivity stickerPackListActivity = stickerPackListActivityWeakReference.get();
-            if (stickerPackListActivity != null) {
+            if (stickerPackListActivity != null && !stickerPackListActivity.isFinishing() && !stickerPackListActivity.isDestroyed()) {
                 stickerPackListActivity.allStickerPacksListAdapter.updateData(stickerPackList);
             }
         }

@@ -366,6 +366,8 @@ class StickerPackLoader {
                             try {
                                 URL url = new URL(sticker.imageUrl);
                                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                                urlConnection.setConnectTimeout(15000);
+                                urlConnection.setReadTimeout(30000);
                                 urlConnection.connect();
                                 try (InputStream input = urlConnection.getInputStream()) {
                                     if (sticker.isFeatured) {
@@ -419,6 +421,8 @@ class StickerPackLoader {
                         try {
                             URL url = new URL(stickerPack.trayImageUrl);
                             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                            urlConnection.setConnectTimeout(15000);
+                            urlConnection.setReadTimeout(30000);
                             urlConnection.setDoInput(true);
                             urlConnection.connect();
                             try (InputStream input = urlConnection.getInputStream()) {

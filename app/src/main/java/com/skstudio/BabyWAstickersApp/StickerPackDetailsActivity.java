@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -84,7 +85,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private StickerPack stickerPack;
     private View divider;
     private WhiteListCheckAsyncTask whiteListCheckAsyncTask;
-    private AdView mAdView, mAdView1;
+    private AdView mAdView1;
     private InterstitialAd interstitialAd;
     private RewardedAd rewardedAd;
     private boolean isAdShowing = false;
@@ -104,6 +105,8 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         }
     };
 
+    private final Handler scrollHandler = new Handler();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -118,6 +121,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         ImageView packTrayIcon = findViewById(R.id.tray_image);
         TextView packSizeTextView = findViewById(R.id.pack_size);
         SimpleDraweeView expandedStickerView = findViewById(R.id.sticker_details_expanded_sticker);
+        View expandedStickerOverlay = findViewById(R.id.expanded_sticker_overlay);
 
         addButton = findViewById(R.id.add_to_whatsapp_button);
         alreadyAddedText = findViewById(R.id.already_added_text);
@@ -126,31 +130,27 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setHasFixedSize(true);
         recyclerView.setItemViewCacheSize(20);
-        recyclerView.setDrawingCacheEnabled(true);
-        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
         recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(pageLayoutListener);
-        
-        // Find the NestedScrollView and attach scroll listener to it instead of RecyclerView
-        androidx.core.widget.NestedScrollView nestedScrollView = findViewById(R.id.main_scroll_view);
-        if (nestedScrollView != null) {
-            nestedScrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-                boolean showDivider = scrollY > 0;
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (stickerPreviewAdapter != null) {
+                    boolean isScrolling = newState != RecyclerView.SCROLL_STATE_IDLE;
+                    stickerPreviewAdapter.setScrolling(isScrolling);
+                }
+            }
+
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
                 if (divider != null) {
+                    boolean showDivider = recyclerView.computeVerticalScrollOffset() > 0;
                     divider.setVisibility(showDivider ? View.VISIBLE : View.INVISIBLE);
                 }
-                
-                if (stickerPreviewAdapter != null) {
-                    // Start/Continue scrolling
-                    stickerPreviewAdapter.setScrolling(true);
-                    
-                    // Remove pending stop request
-                    v.removeCallbacks(scrollingFinishedRunnable);
-                    
-                    // Post request to stop after 150ms of no scroll events
-                    v.postDelayed(scrollingFinishedRunnable, 150);
-                }
-            });
-        }
+            }
+        });
 
         divider = findViewById(R.id.divider);
         loadingOverlay = findViewById(R.id.loading_overlay);
@@ -158,7 +158,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         downloadProgressBar = findViewById(R.id.download_progress_bar);
         downloadProgressText = findViewById(R.id.download_progress_text);
         if (stickerPreviewAdapter == null) {
-            stickerPreviewAdapter = new StickerPreviewAdapter(getLayoutInflater(), R.drawable.sticker_error, getResources().getDimensionPixelSize(R.dimen.sticker_pack_details_image_size), getResources().getDimensionPixelSize(R.dimen.sticker_pack_details_image_padding), stickerPack, expandedStickerView);
+            stickerPreviewAdapter = new StickerPreviewAdapter(getLayoutInflater(), R.drawable.sticker_error, getResources().getDimensionPixelSize(R.dimen.sticker_pack_details_image_size), getResources().getDimensionPixelSize(R.dimen.sticker_pack_details_image_padding), stickerPack, expandedStickerOverlay);
             recyclerView.setAdapter(stickerPreviewAdapter);
         }
         packNameTextView.setText(stickerPack.name);
@@ -187,12 +187,15 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
             }
         });
         loadRewardedAd();
-        mAdView = findViewById(R.id.adView);
         mAdView1 = findViewById(R.id.adView1);
         AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
-        mAdView1.loadAd(adRequest);
-        loadNativeAd("ca-app-pub-6979979912689100/6946133941", findViewById(R.id.native_ad_container));
+        if (mAdView1 != null) {
+            mAdView1.loadAd(adRequest);
+        }
+        View nativeAdContainer = findViewById(R.id.native_ad_container);
+        if (nativeAdContainer instanceof ViewGroup) {
+            loadNativeAd("ca-app-pub-6979979912689100/6946133941", (ViewGroup) nativeAdContainer);
+        }
 
         loadingOverlay = findViewById(R.id.loading_overlay);
         shimmerFrameLayout = findViewById(R.id.shimmer_view_container);
@@ -240,9 +243,10 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
             pendingName = stickerPackName;
             showDownloadProgress();
             StickerPackLoader.downloadStickers(this, stickerPack, progress -> {
+                if (isFinishing() || isDestroyed()) return;
                 if (downloadProgressBar != null) {
                     // Check if shimmer is still somehow active and kill it
-                    if (loadingOverlay.getVisibility() == View.VISIBLE) {
+                    if (loadingOverlay != null && loadingOverlay.getVisibility() == View.VISIBLE) {
                         hideLoader();
                     }
                     
@@ -253,17 +257,26 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
                     
                     // Smoothly animate percentage text
                     try {
-                        String currentText = downloadProgressText.getText().toString().replace("%", "");
-                        int startValue = currentText.isEmpty() ? 0 : Integer.parseInt(currentText);
-                        android.animation.ValueAnimator textAnimator = android.animation.ValueAnimator.ofInt(startValue, progress);
-                        textAnimator.setDuration(400);
-                        textAnimator.addUpdateListener(animation1 -> downloadProgressText.setText(getString(R.string.percent_format, (int) animation1.getAnimatedValue())));
-                        textAnimator.start();
+                        if (downloadProgressText != null) {
+                            String currentText = downloadProgressText.getText().toString().replace("%", "");
+                            int startValue = currentText.isEmpty() ? 0 : Integer.parseInt(currentText);
+                            android.animation.ValueAnimator textAnimator = android.animation.ValueAnimator.ofInt(startValue, progress);
+                            textAnimator.setDuration(400);
+                            textAnimator.addUpdateListener(animation1 -> {
+                                if (!isFinishing() && !isDestroyed() && downloadProgressText != null) {
+                                    downloadProgressText.setText(getString(R.string.percent_format, (int) animation1.getAnimatedValue()));
+                                }
+                            });
+                            textAnimator.start();
+                        }
                     } catch (NumberFormatException e) {
-                        downloadProgressText.setText(getString(R.string.percent_format, progress));
+                        if (downloadProgressText != null) {
+                            downloadProgressText.setText(getString(R.string.percent_format, progress));
+                        }
                     }
                 }
             }, () -> {
+                if (isFinishing() || isDestroyed()) return;
                 hideDownloadProgress();
                 if (pendingIdentifier != null && !isAdShowing) {
                     showRewardedAndAddSticker(pendingIdentifier, pendingName);
@@ -308,6 +321,9 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     }
 
     private void loadRewardedAd() {
+        if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
         AdRequest adRequest = new AdRequest.Builder().build();
 
         RewardedAd.load(this,
@@ -316,6 +332,9 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
                 new RewardedAdLoadCallback() {
                     @Override
                     public void onAdLoaded(@NonNull RewardedAd ad) {
+                        if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                            return;
+                        }
                         rewardedAd = ad;
 
                         // ✅ Ad is ready → hide loader
@@ -339,7 +358,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
 
     private void showAd(String identifier, String stickerPackName) {
 
-        if (rewardedAd == null) return;
+        if (rewardedAd == null || isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) return;
 
         isAdShowing = true;
         isRewardEarned = false;
@@ -348,6 +367,9 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
 
             @Override
             public void onAdDismissedFullScreenContent() {
+                if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                    return;
+                }
                 isAdShowing = false;
                 hideLoader();
                 if (!isRewardEarned) {
@@ -362,6 +384,9 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
 
             @Override
             public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                    return;
+                }
                 isAdShowing = false;
                 hideLoader();
                 rewardedAd = null;
@@ -370,6 +395,9 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         });
 
         rewardedAd.show(this, rewardItem -> {
+            if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+                return;
+            }
             isRewardEarned = true;
             performValidationAndAddPack(identifier, stickerPackName);
         });
@@ -394,6 +422,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
 
             @Override
             protected void onPostExecute(Exception e) {
+                if (isFinishing() || isDestroyed()) return;
                 hideLoader();
                 if (e == null) {
                     addStickerPackToWhatsApp(identifier, stickerPackName);
@@ -436,6 +465,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private final ViewTreeObserver.OnGlobalLayoutListener pageLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
         @Override
         public void onGlobalLayout() {
+            recyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             setNumColumns(3);
         }
     };
@@ -454,16 +484,30 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (mAdView1 != null) {
+            mAdView1.resume();
+        }
         whiteListCheckAsyncTask = new WhiteListCheckAsyncTask(this);
         whiteListCheckAsyncTask.execute(stickerPack);
     }
 
     @Override
     protected void onPause() {
+        if (mAdView1 != null) {
+            mAdView1.pause();
+        }
         super.onPause();
         if (whiteListCheckAsyncTask != null && !whiteListCheckAsyncTask.isCancelled()) {
             whiteListCheckAsyncTask.cancel(true);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mAdView1 != null) {
+            mAdView1.destroy();
+        }
+        super.onDestroy();
     }
 
     private void updateAddUI(Boolean isWhitelisted) {
@@ -498,7 +542,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         @Override
         protected void onPostExecute(Boolean isWhitelisted) {
             final StickerPackDetailsActivity stickerPackDetailsActivity = stickerPackDetailsActivityWeakReference.get();
-            if (stickerPackDetailsActivity != null) {
+            if (stickerPackDetailsActivity != null && !stickerPackDetailsActivity.isFinishing() && !stickerPackDetailsActivity.isDestroyed()) {
                 stickerPackDetailsActivity.updateAddUI(isWhitelisted);
             }
         }

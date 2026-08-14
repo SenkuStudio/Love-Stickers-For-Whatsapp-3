@@ -24,6 +24,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.common.ResizeOptions;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -41,14 +44,13 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
     private final int cellLimit;
     private final int cellPadding;
     private final int errorResource;
+    private final View expandedStickerOverlay;
     private final SimpleDraweeView expandedStickerPreview;
 
     private final LayoutInflater layoutInflater;
     private RecyclerView recyclerView;
-    private View clickedStickerPreview;
-    float expandedViewLeftX;
-    float expandedViewTopY;
     private boolean isScrolling = false;
+    private final ResizeOptions resizeOptions;
 
     StickerPreviewAdapter(
             @NonNull final LayoutInflater layoutInflater,
@@ -56,14 +58,16 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
             final int cellSize,
             final int cellPadding,
             @NonNull final StickerPack stickerPack,
-            final SimpleDraweeView expandedStickerView) {
+            final View expandedStickerOverlay) {
         this.cellSize = cellSize;
         this.cellPadding = cellPadding;
         this.cellLimit = 0;
         this.layoutInflater = layoutInflater;
         this.errorResource = errorResource;
         this.stickerPack = stickerPack;
-        this.expandedStickerPreview = expandedStickerView;
+        this.expandedStickerOverlay = expandedStickerOverlay;
+        this.expandedStickerPreview = expandedStickerOverlay.findViewById(R.id.sticker_details_expanded_sticker);
+        this.resizeOptions = new ResizeOptions(cellSize, cellSize);
     }
 
     @NonNull
@@ -86,9 +90,12 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
         Uri uri = StickerPackLoader.getStickerUri(stickerPreviewViewHolder.stickerPreviewView.getContext(), stickerPack, stickerPack.getStickers().get(i));
         
         Object oldUri = stickerPreviewViewHolder.stickerPreviewView.getTag(R.id.uri_tag);
-        if (!uri.equals(oldUri)) {
+        if (uri != null && !uri.equals(oldUri)) {
+            ImageRequest request = ImageRequestBuilder.newBuilderWithSource(uri)
+                    .setResizeOptions(resizeOptions)
+                    .build();
             DraweeController controller = Fresco.newDraweeControllerBuilder()
-                    .setUri(uri)
+                    .setImageRequest(request)
                     .setAutoPlayAnimations(false)
                     .setOldController(stickerPreviewViewHolder.stickerPreviewView.getController())
                     .build();
@@ -154,72 +161,13 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
                 }
             };
 
-    private void positionExpandedStickerPreview(int selectedPosition) {
-        if (expandedStickerPreview != null) {
-            // Calculate the view's center (x, y), then use expandedStickerPreview's height and
-            // width to
-            // figure out what where to position it.
-            final ViewGroup.MarginLayoutParams recyclerViewLayoutParams =
-                    ((ViewGroup.MarginLayoutParams) recyclerView.getLayoutParams());
-            final int recyclerViewLeftMargin = recyclerViewLayoutParams.leftMargin;
-            final int recyclerViewRightMargin = recyclerViewLayoutParams.rightMargin;
-            final int recyclerViewWidth = recyclerView.getWidth();
-            final int recyclerViewHeight = recyclerView.getHeight();
-
-            final StickerPreviewViewHolder clickedViewHolder =
-                    (StickerPreviewViewHolder)
-                            recyclerView.findViewHolderForAdapterPosition(selectedPosition);
-            if (clickedViewHolder == null) {
-                hideExpandedStickerPreview();
-                return;
-            }
-            clickedStickerPreview = clickedViewHolder.itemView;
-            final float clickedViewCenterX =
-                    clickedStickerPreview.getX()
-                            + recyclerViewLeftMargin
-                            + clickedStickerPreview.getWidth() / 2f;
-            final float clickedViewCenterY =
-                    clickedStickerPreview.getY() + clickedStickerPreview.getHeight() / 2f;
-
-            expandedViewLeftX = clickedViewCenterX - expandedStickerPreview.getWidth() / 2f;
-            expandedViewTopY = clickedViewCenterY - expandedStickerPreview.getHeight() / 2f;
-
-            // If the new x or y positions are negative, anchor them to 0 to avoid clipping
-            // the left side of the device and the top of the recycler view.
-            expandedViewLeftX = Math.max(expandedViewLeftX, 0);
-            expandedViewTopY = Math.max(expandedViewTopY, 0);
-
-            // If the bottom or right sides are clipped, we need to move the top left positions
-            // so that those sides are no longer clipped.
-            final float adjustmentX =
-                    Math.max(
-                            expandedViewLeftX
-                                    + expandedStickerPreview.getWidth()
-                                    - recyclerViewWidth
-                                    - recyclerViewRightMargin,
-                            0);
-            final float adjustmentY =
-                    Math.max(expandedViewTopY + expandedStickerPreview.getHeight() - recyclerViewHeight, 0);
-
-            expandedViewLeftX -= adjustmentX;
-            expandedViewTopY -= adjustmentY;
-
-
-            expandedStickerPreview.setX(expandedViewLeftX);
-            expandedStickerPreview.setY(expandedViewTopY);
-        }
-    }
-
     private void expandPreview(int position, View clickedStickerPreview) {
         if (isStickerPreviewExpanded()) {
             hideExpandedStickerPreview();
             return;
         }
 
-        this.clickedStickerPreview = clickedStickerPreview;
-        if (expandedStickerPreview != null) {
-            positionExpandedStickerPreview(position);
-
+        if (expandedStickerOverlay != null && expandedStickerPreview != null) {
             final Uri stickerAssetUri = StickerPackLoader.getStickerUri(expandedStickerPreview.getContext(), stickerPack, stickerPack.getStickers().get(position));
             DraweeController controller = Fresco.newDraweeControllerBuilder()
                     .setUri(stickerAssetUri)
@@ -228,10 +176,9 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
             expandedStickerPreview.setImageResource(errorResource);
             expandedStickerPreview.setController(controller);
 
-            expandedStickerPreview.setVisibility(View.VISIBLE);
-            recyclerView.setAlpha(EXPANDED_STICKER_PREVIEW_BACKGROUND_ALPHA);
+            expandedStickerOverlay.setVisibility(View.VISIBLE);
 
-            expandedStickerPreview.setOnClickListener(v -> hideExpandedStickerPreview());
+            expandedStickerOverlay.setOnClickListener(v -> hideExpandedStickerPreview());
             expandedStickerPreview.setOnLongClickListener(v -> {
                 shareSticker(position);
                 return true;
@@ -280,20 +227,21 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
     }
 
     public void hideExpandedStickerPreview() {
-        if (isStickerPreviewExpanded() && expandedStickerPreview != null) {
-            clickedStickerPreview.setVisibility(View.VISIBLE);
-            expandedStickerPreview.setVisibility(View.INVISIBLE);
-            recyclerView.setAlpha(COLLAPSED_STICKER_PREVIEW_BACKGROUND_ALPHA);
+        if (isStickerPreviewExpanded() && expandedStickerOverlay != null) {
+            expandedStickerOverlay.setVisibility(View.GONE);
         }
     }
 
     private boolean isStickerPreviewExpanded() {
-        return expandedStickerPreview != null && expandedStickerPreview.getVisibility() == View.VISIBLE;
+        return expandedStickerOverlay != null && expandedStickerOverlay.getVisibility() == View.VISIBLE;
     }
 
     public void setScrolling(boolean scrolling) {
         if (this.isScrolling != scrolling) {
             this.isScrolling = scrolling;
+            if (scrolling) {
+                hideExpandedStickerPreview();
+            }
             if (recyclerView != null) {
                 for (int i = 0; i < recyclerView.getChildCount(); i++) {
                     View child = recyclerView.getChildAt(i);

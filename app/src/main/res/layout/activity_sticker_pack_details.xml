@@ -73,21 +73,14 @@
                     tools:text="Author" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
-                    android:text="@string/dot"
-                    android:textColor="@color/textSecondary"
-                    android:visibility="gone" />
-
-                <TextView
                     android:id="@+id/pack_size"
                     style="@style/sticker_packs_list_item_author_style"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
                     android:visibility="gone"
-                    tools:text="Size" />
+                    tools:text="Size"
+                    tools:visibility="visible" />
 
                 <ImageView
                     android:id="@+id/sticker_pack_animation_indicator"
@@ -102,6 +95,20 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
+        <com.google.android.gms.ads.AdView
+            android:id="@+id/adView1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            ads:adSize="BANNER"
+            ads:adUnitId="ca-app-pub-6979979912689100/7353328053" />
+
+        <FrameLayout
+            android:id="@+id/native_ad_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
         <View
             android:id="@+id/divider"
             android:layout_width="match_parent"
@@ -115,53 +122,19 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/main_scroll_view"
+        <com.skstudio.BabyWAstickersApp.BottomFadingRecyclerView
+            android:id="@+id/sticker_list"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <com.google.android.gms.ads.AdView
-                    android:id="@+id/adView1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    ads:adSize="BANNER"
-                    ads:adUnitId="ca-app-pub-6979979912689100/7353328053" />
-
-                <com.skstudio.BabyWAstickersApp.BottomFadingRecyclerView
-                    android:id="@+id/sticker_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clipToPadding="false"
-                    android:nestedScrollingEnabled="false"
-                    android:overScrollMode="never"
-                    android:padding="8dp" />
-
-                <FrameLayout
-                    android:id="@+id/native_ad_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone" />
-
-                <com.google.android.gms.ads.AdView
-                    android:id="@+id/adView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    ads:adSize="BANNER"
-                    ads:adUnitId="ca-app-pub-6979979912689100/2101001379" />
-
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="100dp" />
-
-            </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="true"
+            android:overScrollMode="never"
+            android:paddingLeft="8dp"
+            android:paddingTop="8dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="160dp"
+            android:scrollbarStyle="outsideOverlay"
+            android:scrollbars="vertical" />
 
         <!-- Shimmer Loading Overlay -->
         <FrameLayout
@@ -300,12 +273,45 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <com.facebook.drawee.view.SimpleDraweeView
-        android:id="@+id/sticker_details_expanded_sticker"
-        android:layout_width="128dp"
-        android:layout_height="128dp"
-        android:layout_gravity="center"
-        android:scaleType="centerCrop"
-        android:visibility="invisible" />
+    <!-- Expanded Sticker Preview Overlay -->
+    <FrameLayout
+        android:id="@+id/expanded_sticker_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"
+        android:elevation="40dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp">
+
+            <com.facebook.drawee.view.SimpleDraweeView
+                android:id="@+id/sticker_details_expanded_sticker"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_margin="16dp"
+                app:actualImageScaleType="fitCenter"
+                app:placeholderImage="@drawable/sticker_error" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="48dp"
+            android:text="@string/long_press_to_share"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:alpha="0.8" />
+
+    </FrameLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

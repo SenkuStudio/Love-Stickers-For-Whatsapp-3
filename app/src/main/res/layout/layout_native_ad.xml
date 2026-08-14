@@ -6,10 +6,20 @@
     android:background="@color/surface"
     android:layout_margin="8dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="8dp">
+        android:layout_height="wrap_content">
+
+        <include
+            android:id="@+id/shimmer_layout"
+            layout="@layout/layout_shimmer_native_ad" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/ad_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:visibility="invisible">
 
         <ImageView
             android:id="@+id/ad_app_icon"
@@ -81,5 +91,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ad_body" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
 </com.google.android.gms.ads.nativead.NativeAdView>

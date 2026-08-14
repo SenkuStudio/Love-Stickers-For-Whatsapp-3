@@ -36,8 +36,10 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
     protected void loadNativeAd(String adUnitId, ViewGroup adContainer) {
+        if (adContainer == null || isFinishing() || isDestroyed()) return;
         AdLoader adLoader = new AdLoader.Builder(this, adUnitId)
                 .forNativeAd(nativeAd -> {
+                    if (adContainer == null || isFinishing() || isDestroyed()) return;
                     NativeAdView adView = (NativeAdView) getLayoutInflater()
                             .inflate(R.layout.layout_native_ad, null);
                     populateNativeAdView(nativeAd, adView);

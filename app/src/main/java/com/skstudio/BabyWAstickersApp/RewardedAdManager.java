@@ -126,8 +126,10 @@ public class RewardedAdManager {
 
         rewardedAd.show(activity, rewardItem -> {
             Log.d(TAG, "Reward earned: " + rewardItem.getAmount() + " " + rewardItem.getType());
-            if (listener != null) {
-                listener.onRewardEarned(rewardItem);
+            if (activity != null && !activity.isFinishing() && (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 || !activity.isDestroyed())) {
+                if (listener != null) {
+                    listener.onRewardEarned(rewardItem);
+                }
             }
         });
     }
