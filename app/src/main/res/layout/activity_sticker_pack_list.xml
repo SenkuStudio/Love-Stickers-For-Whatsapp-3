@@ -39,7 +39,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             ads:adSize="BANNER"
-            ads:adUnitId="ca-app-pub-6979979912689100/6006226216" />
+            ads:adUnitId="ca-app-pub-6979979912689100/3605654738" />
 
         <!-- CONTENT -->
         <FrameLayout
@@ -250,7 +250,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             ads:adSize="BANNER"
-            ads:adUnitId="ca-app-pub-6979979912689100/9190206026" />
+            ads:adUnitId="ca-app-pub-6979979912689100/6877067360" />
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_navigation"

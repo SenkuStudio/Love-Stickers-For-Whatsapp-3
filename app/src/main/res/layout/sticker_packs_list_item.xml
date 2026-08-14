@@ -27,7 +27,7 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            app:layout_constraintEnd_toStartOf="@id/add_button_on_list"
+            app:layout_constraintEnd_toStartOf="@id/favorite_button"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
@@ -40,22 +40,6 @@
                 android:textColor="@color/textPrimary"
                 tools:text="Pusheen" />
 
-            <TextView
-                android:id="@+id/sticker_pack_category"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/category_chip_bg"
-                android:paddingStart="8dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="2dp"
-                android:textColor="@color/category_chip_text"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:visibility="gone"
-                tools:text="LOVE"
-                tools:visibility="visible" />
 
             <ImageView
                 android:id="@+id/sticker_pack_animation_indicator"
@@ -75,7 +59,7 @@
             android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            app:layout_constraintEnd_toStartOf="@id/add_button_on_list"
+            app:layout_constraintEnd_toStartOf="@id/favorite_button"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/sticker_pack_info">
 
@@ -113,7 +97,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:orientation="horizontal"
-            app:layout_constraintEnd_toStartOf="@id/add_button_on_list"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/sticker_pack_meta">
 
@@ -152,14 +136,6 @@
                 android:visibility="gone"
                 tools:visibility="visible" />
 
-            <com.facebook.drawee.view.SimpleDraweeView
-                android:id="@+id/sticker_img_5"
-                style="@style/sticker_packs_list_item_image_style"
-                android:layout_width="@dimen/sticker_pack_list_item_preview_image_size"
-                android:layout_height="@dimen/sticker_pack_list_item_preview_image_size"
-                android:layout_marginStart="8dp"
-                android:visibility="gone"
-                tools:visibility="visible" />
         </LinearLayout>
 
         <ImageButton

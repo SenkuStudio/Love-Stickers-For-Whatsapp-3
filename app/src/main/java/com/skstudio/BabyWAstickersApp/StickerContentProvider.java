@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -25,7 +25,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.skstudio.WAstickersApp.BuildConfig;
+import com.skstudio.BabyWAstickersApp.BuildConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -155,7 +155,7 @@ public class StickerContentProvider extends ContentProvider {
     private synchronized void readContentFile(@NonNull Context context) {
         stickerPackList = new ArrayList<>();
         // Add remote packs from local persistence
-        stickerPackList.addAll(com.skstudio.WAstickersApp.StickerPackLoader.loadRemotePacks(context));
+        stickerPackList.addAll(com.skstudio.BabyWAstickersApp.StickerPackLoader.loadRemotePacks(context));
     }
 
     private Cursor getPackForAllStickerPacks(@NonNull Uri uri) {

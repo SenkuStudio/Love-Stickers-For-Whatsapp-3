@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -49,7 +49,7 @@ import android.view.Menu;
 
 public class StickerPackListActivity extends AddStickerPackActivity {
     public static final String EXTRA_STICKER_PACK_LIST_DATA = "sticker_pack_list";
-    private static final int STICKER_PREVIEW_DISPLAY_LIMIT = 5;
+    private static final int STICKER_PREVIEW_DISPLAY_LIMIT = 4;
     private LinearLayoutManager packLayoutManager;
     private RecyclerView packRecyclerView;
     private StickerPackListAdapter allStickerPacksListAdapter;
@@ -124,6 +124,10 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         findViewById(R.id.retry_button).setOnClickListener(v -> refreshStickerPacks());
 
         packRecyclerView = findViewById(R.id.sticker_pack_list);
+        packRecyclerView.setHasFixedSize(true);
+        packRecyclerView.setItemViewCacheSize(20);
+        packRecyclerView.setScrollingTouchSlop(RecyclerView.TOUCH_SLOP_PAGING);
+
         stickerPackList = getIntent().getParcelableArrayListExtra(EXTRA_STICKER_PACK_LIST_DATA);
         if (stickerPackList == null || stickerPackList.isEmpty()) {
             // Try to load from cache
@@ -156,7 +160,7 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         AdRequest adRequest = new AdRequest.Builder().build();
         mAdView.loadAd(adRequest);
         mAdView1.loadAd(adRequest);
-        loadNativeAd("ca-app-pub-6979979912689100/6586602956", findViewById(R.id.native_ad_container));
+        loadNativeAd("ca-app-pub-6979979912689100/4535593027", findViewById(R.id.native_ad_container));
         updateAdVisibility(R.id.nav_home);
         MobileAds.initialize(this, initializationStatus -> {});
         emptyStateView = findViewById(R.id.empty_state_view);
@@ -447,6 +451,11 @@ public class StickerPackListActivity extends AddStickerPackActivity {
     private void showStickerPackList(List<StickerPack> stickerPackList) {
         allStickerPacksListAdapter = new StickerPackListAdapter(stickerPackList, onAddButtonClickedListener);
         packRecyclerView.setAdapter(allStickerPacksListAdapter);
+        packRecyclerView.setHasFixedSize(true);
+        packRecyclerView.setItemViewCacheSize(20);
+        packRecyclerView.setDrawingCacheEnabled(true);
+        packRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+        
         packLayoutManager = new LinearLayoutManager(this);
         packLayoutManager.setOrientation(RecyclerView.VERTICAL);
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(
@@ -455,12 +464,30 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         );
         packRecyclerView.addItemDecoration(dividerItemDecoration);
         packRecyclerView.setLayoutManager(packLayoutManager);
-        packRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(this::recalculateColumnCount);
+        packRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                recalculateColumnCount();
+                if (packRecyclerView.getWidth() > 0 && packRecyclerView.getHeight() > 0) {
+                    packRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                }
+            }
+        });
         setupPagination();
     }
 
     private void setupPagination() {
         packRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (allStickerPacksListAdapter != null) {
+                    boolean isScrolling = newState != RecyclerView.SCROLL_STATE_IDLE;
+                    allStickerPacksListAdapter.setScrolling(isScrolling);
+                    allStickerPacksListAdapter.updateAnimationState(recyclerView);
+                }
+            }
+
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
@@ -670,7 +697,7 @@ public class StickerPackListActivity extends AddStickerPackActivity {
             int maxNumberOfImagesInARow = Math.min(STICKER_PREVIEW_DISPLAY_LIMIT, max);
             int minMarginBetweenImages = maxNumberOfImagesInARow > 1 ? (widthOfImageRow - maxNumberOfImagesInARow * previewSize) / (maxNumberOfImagesInARow - 1) : 0;
             if (allStickerPacksListAdapter != null) {
-                allStickerPacksListAdapter.setImageRowSpec(maxNumberOfImagesInARow, minMarginBetweenImages);
+                allStickerPacksListAdapter.setImageRowSpec(maxNumberOfImagesInARow, minMarginBetweenImages, previewSize);
             }
         }
     }

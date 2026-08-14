@@ -1,4 +1,4 @@
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.app.Activity;
 import android.content.Context;
@@ -22,7 +22,7 @@ import com.google.android.gms.ads.AdapterResponseInfo;
  */
 public class RewardedAdManager {
     private static final String TAG = "RewardedAdManager";
-    private static final String AD_UNIT_ID = "ca-app-pub-6979979912689100/5679037049"; // Replace with your production ID
+    private static final String AD_UNIT_ID = "ca-app-pub-6979979912689100/7890766137"; // Replace with your production ID
 
     private static RewardedAdManager instance;
     private RewardedAd rewardedAd;

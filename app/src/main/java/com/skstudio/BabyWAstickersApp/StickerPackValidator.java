@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -18,7 +18,7 @@ import android.webkit.URLUtil;
 
 import androidx.annotation.NonNull;
 
-import com.skstudio.WAstickersApp.StickerPack;
+import com.skstudio.BabyWAstickersApp.StickerPack;
 import com.facebook.animated.webp.WebPImage;
 import com.facebook.imagepipeline.common.ImageDecodeOptions;
 

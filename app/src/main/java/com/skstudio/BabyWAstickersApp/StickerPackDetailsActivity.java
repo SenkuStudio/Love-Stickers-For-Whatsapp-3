@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.content.Context;
 import android.content.Intent;
@@ -98,6 +98,12 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private String pendingName;
     private boolean isDownloading = false;
 
+    private final Runnable scrollingFinishedRunnable = () -> {
+        if (stickerPreviewAdapter != null) {
+            stickerPreviewAdapter.setScrolling(false);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -118,8 +124,34 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         layoutManager = new GridLayoutManager(this, 1);
         recyclerView = findViewById(R.id.sticker_list);
         recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
         recyclerView.getViewTreeObserver().addOnGlobalLayoutListener(pageLayoutListener);
-        recyclerView.addOnScrollListener(dividerScrollListener);
+        
+        // Find the NestedScrollView and attach scroll listener to it instead of RecyclerView
+        androidx.core.widget.NestedScrollView nestedScrollView = findViewById(R.id.main_scroll_view);
+        if (nestedScrollView != null) {
+            nestedScrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                boolean showDivider = scrollY > 0;
+                if (divider != null) {
+                    divider.setVisibility(showDivider ? View.VISIBLE : View.INVISIBLE);
+                }
+                
+                if (stickerPreviewAdapter != null) {
+                    // Start/Continue scrolling
+                    stickerPreviewAdapter.setScrolling(true);
+                    
+                    // Remove pending stop request
+                    v.removeCallbacks(scrollingFinishedRunnable);
+                    
+                    // Post request to stop after 150ms of no scroll events
+                    v.postDelayed(scrollingFinishedRunnable, 150);
+                }
+            });
+        }
+
         divider = findViewById(R.id.divider);
         loadingOverlay = findViewById(R.id.loading_overlay);
         downloadProgressContainer = findViewById(R.id.download_progress_container);
@@ -160,7 +192,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         AdRequest adRequest = new AdRequest.Builder().build();
         mAdView.loadAd(adRequest);
         mAdView1.loadAd(adRequest);
-        loadNativeAd("ca-app-pub-6979979912689100/7358307302", findViewById(R.id.native_ad_container));
+        loadNativeAd("ca-app-pub-6979979912689100/6946133941", findViewById(R.id.native_ad_container));
 
         loadingOverlay = findViewById(R.id.loading_overlay);
         shimmerFrameLayout = findViewById(R.id.shimmer_view_container);
@@ -184,10 +216,13 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
 
     private void showDownloadProgress() {
         hideLoader(); // Ensure shimmer is hidden
-        if (downloadProgressContainer != null) {
-            downloadProgressContainer.setVisibility(View.VISIBLE);
-            downloadProgressBar.setProgress(0);
-            downloadProgressText.setText("0%");
+        // Only show if we are actually downloading (StickerPackLoader.isStickerPackDownloaded will be false)
+        if (!StickerPackLoader.isStickerPackDownloaded(this, stickerPack)) {
+            if (downloadProgressContainer != null) {
+                downloadProgressContainer.setVisibility(View.VISIBLE);
+                downloadProgressBar.setProgress(0);
+                downloadProgressText.setText("0%");
+            }
         }
     }
 
@@ -276,7 +311,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         AdRequest adRequest = new AdRequest.Builder().build();
 
         RewardedAd.load(this,
-                "ca-app-pub-6979979912689100/4393875532",
+                "ca-app-pub-6979979912689100/5543804398",
                 adRequest,
                 new RewardedAdLoadCallback() {
                     @Override
@@ -401,7 +436,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private final ViewTreeObserver.OnGlobalLayoutListener pageLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
         @Override
         public void onGlobalLayout() {
-            setNumColumns(recyclerView.getWidth() / recyclerView.getContext().getResources().getDimensionPixelSize(R.dimen.sticker_pack_details_image_size));
+            setNumColumns(3);
         }
     };
 
@@ -415,26 +450,6 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         }
     }
 
-    private final RecyclerView.OnScrollListener dividerScrollListener = new RecyclerView.OnScrollListener() {
-        @Override
-        public void onScrollStateChanged(@NonNull final RecyclerView recyclerView, final int newState) {
-            super.onScrollStateChanged(recyclerView, newState);
-            updateDivider(recyclerView);
-        }
-
-        @Override
-        public void onScrolled(@NonNull final RecyclerView recyclerView, final int dx, final int dy) {
-            super.onScrolled(recyclerView, dx, dy);
-            updateDivider(recyclerView);
-        }
-
-        private void updateDivider(RecyclerView recyclerView) {
-            boolean showDivider = recyclerView.computeVerticalScrollOffset() > 0;
-            if (divider != null) {
-                divider.setVisibility(showDivider ? View.VISIBLE : View.INVISIBLE);
-            }
-        }
-    };
 
     @Override
     protected void onResume() {

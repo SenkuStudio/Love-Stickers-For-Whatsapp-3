@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.skstudio.WAstickersApp">
+    package="com.skstudio.BabyWAstickersApp">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -47,7 +47,7 @@
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-6979979912689100~2520356241" />
+            android:value="ca-app-pub-6979979912689100~3829016010" />
 
 
         <activity android:name=".StickerPackListActivity" />
@@ -58,7 +58,7 @@
             tools:ignore="UnusedAttribute">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.skstudio.WAstickersApp.StickerPackListActivity" />
+                android:value="com.skstudio.BabyWAstickersApp.StickerPackListActivity" />
         </activity>
         <activity
             android:name=".StickerPackInfoActivity"
@@ -67,7 +67,7 @@
             tools:ignore="UnusedAttribute">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.skstudio.WAstickersApp.StickerPackDetailsActivity" />
+                android:value="com.skstudio.BabyWAstickersApp.StickerPackDetailsActivity" />
         </activity>
 
         <provider

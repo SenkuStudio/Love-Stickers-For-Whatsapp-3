@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.content.Context;
 import android.content.Intent;
@@ -19,7 +19,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -31,6 +30,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.common.ResizeOptions;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -50,7 +52,10 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private FavoriteManager favoriteManager;
     private int maxNumberOfStickersInARow;
     private int minMarginBetweenImages;
+    private int previewSize;
     private boolean showLoadingFooter = false;
+    private boolean isScrolling = false;
+    private ResizeOptions resizeOptions;
 
     StickerPackListAdapter(@NonNull List<StickerPack> stickerPacks, @NonNull OnAddButtonClickedListener onAddButtonClickedListener) {
         this.stickerPacks = new ArrayList<>(stickerPacks);
@@ -144,12 +149,6 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             viewHolder.filesizeView.setText(Formatter.formatShortFileSize(context, pack.getTotalSize()));
 
             viewHolder.titleView.setText(pack.name);
-            if (pack.category != null && !pack.category.isEmpty()) {
-                viewHolder.categoryView.setText(pack.category.toUpperCase());
-                viewHolder.categoryView.setVisibility(View.VISIBLE);
-            } else {
-                viewHolder.categoryView.setVisibility(View.GONE);
-            }
             viewHolder.container.setOnClickListener(view -> {
                 Intent intent = new Intent(view.getContext(), StickerPackDetailsActivity.class);
                 intent.putExtra(StickerPackDetailsActivity.EXTRA_SHOW_UP_BUTTON, true);
@@ -158,27 +157,46 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             });
             //if this sticker pack contains less stickers than the max, then take the smaller size.
             int actualNumberOfStickersToShow = Math.min(maxNumberOfStickersInARow, pack.getStickers().size());
+            List<Sticker> stickers = pack.getStickers();
             for (int i = 0; i < viewHolder.stickerImages.size(); i++) {
                 SimpleDraweeView rowImage = viewHolder.stickerImages.get(i);
                 if (i < actualNumberOfStickersToShow) {
-                    rowImage.setVisibility(View.VISIBLE);
-                    Uri uri = StickerPackLoader.getStickerUri(context, pack, pack.getStickers().get(i));
-                    DraweeController controller = Fresco.newDraweeControllerBuilder()
-                            .setUri(uri)
-                            .setAutoPlayAnimations(true)
-                            .build();
-                    rowImage.setController(controller);
-                    
-                    // Apply dynamic margins
-                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) rowImage.getLayoutParams();
-                    if (i == 0) {
-                        lp.leftMargin = 0;
-                    } else {
-                        lp.leftMargin = minMarginBetweenImages;
+                    if (rowImage.getVisibility() != View.VISIBLE) {
+                        rowImage.setVisibility(View.VISIBLE);
                     }
-                    rowImage.setLayoutParams(lp);
+                    Uri uri = StickerPackLoader.getStickerUri(context, pack, stickers.get(i));
+                    
+                    Object oldUri = rowImage.getTag(R.id.uri_tag);
+                    if (uri != null && !uri.equals(oldUri)) {
+                        ImageRequestBuilder requestBuilder = ImageRequestBuilder.newBuilderWithSource(uri);
+                        if (resizeOptions != null) {
+                            requestBuilder.setResizeOptions(resizeOptions);
+                        }
+                        // Add this to reduce priority of off-screen items
+                        requestBuilder.setRequestPriority(com.facebook.imagepipeline.common.Priority.MEDIUM);
+
+                        ImageRequest request = requestBuilder.build();
+
+                        DraweeController controller = Fresco.newDraweeControllerBuilder()
+                                .setImageRequest(request)
+                                .setAutoPlayAnimations(false)
+                                .setOldController(rowImage.getController())
+                                .build();
+                        rowImage.setController(controller);
+                        rowImage.setTag(R.id.uri_tag, uri);
+                    }
+                    
+                    // Apply dynamic margins - only if changed to avoid layout requests
+                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) rowImage.getLayoutParams();
+                    int targetMargin = (i == 0) ? 0 : minMarginBetweenImages;
+                    if (lp.leftMargin != targetMargin) {
+                        lp.leftMargin = targetMargin;
+                        rowImage.setLayoutParams(lp);
+                    }
                 } else {
-                    rowImage.setVisibility(View.GONE);
+                    if (rowImage.getVisibility() != View.GONE) {
+                        rowImage.setVisibility(View.GONE);
+                    }
                 }
             }
             setAddButtonAppearance(viewHolder.addButton, pack);
@@ -188,6 +206,18 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 favoriteManager.toggleFavorite(pack.identifier);
                 updateFavoriteUI(viewHolder.favoriteButton, pack);
             });
+        }
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder instanceof StickerPackListItemViewHolder) {
+            StickerPackListItemViewHolder viewHolder = (StickerPackListItemViewHolder) holder;
+            for (SimpleDraweeView rowImage : viewHolder.stickerImages) {
+                rowImage.setController(null);
+                rowImage.setTag(R.id.uri_tag, null);
+            }
         }
     }
 
@@ -227,8 +257,12 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         return stickerPacks.size() + (showLoadingFooter ? 1 : 0);
     }
 
-    void setImageRowSpec(int maxNumberOfStickersInARow, int minMarginBetweenImages) {
+    void setImageRowSpec(int maxNumberOfStickersInARow, int minMarginBetweenImages, int previewSize) {
         this.minMarginBetweenImages = minMarginBetweenImages;
+        this.previewSize = previewSize;
+        if (previewSize > 0) {
+            this.resizeOptions = new ResizeOptions(previewSize, previewSize);
+        }
         if (this.maxNumberOfStickersInARow != maxNumberOfStickersInARow) {
             this.maxNumberOfStickersInARow = maxNumberOfStickersInARow;
             notifyDataSetChanged();
@@ -254,6 +288,32 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     public void setData(List<StickerPack> newList) {
         updateData(newList);
+    }
+
+    public void setScrolling(boolean scrolling) {
+        if (this.isScrolling != scrolling) {
+            this.isScrolling = scrolling;
+            // No notifyDataSetChanged here to avoid stutter
+        }
+    }
+
+    public void updateAnimationState(RecyclerView recyclerView) {
+        for (int i = 0; i < recyclerView.getChildCount(); i++) {
+            View child = recyclerView.getChildAt(i);
+            RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(child);
+            if (holder instanceof StickerPackListItemViewHolder) {
+                StickerPackListItemViewHolder vh = (StickerPackListItemViewHolder) holder;
+                for (SimpleDraweeView dv : vh.stickerImages) {
+                    if (dv.getController() != null && dv.getController().getAnimatable() != null) {
+                        if (isScrolling) {
+                            dv.getController().getAnimatable().stop();
+                        } else {
+                            dv.getController().getAnimatable().start();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Removed redundant updateData method to keep only the DiffUtil version

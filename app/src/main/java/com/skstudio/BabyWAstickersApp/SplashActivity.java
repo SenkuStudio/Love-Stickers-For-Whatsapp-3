@@ -1,4 +1,4 @@
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;

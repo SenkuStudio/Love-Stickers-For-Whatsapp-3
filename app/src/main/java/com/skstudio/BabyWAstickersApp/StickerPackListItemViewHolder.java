@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.view.View;
 import android.widget.ImageButton;
@@ -28,7 +28,6 @@ class StickerPackListItemViewHolder extends RecyclerView.ViewHolder {
     final TextView titleView;
     final TextView publisherView;
     final TextView filesizeView;
-    final TextView categoryView;
     final MaterialButton addButton;
     final ImageButton favoriteButton;
     final ImageView animatedStickerPackIndicator;
@@ -41,7 +40,6 @@ class StickerPackListItemViewHolder extends RecyclerView.ViewHolder {
         titleView = itemView.findViewById(R.id.sticker_pack_title);
         publisherView = itemView.findViewById(R.id.sticker_pack_publisher);
         filesizeView = itemView.findViewById(R.id.sticker_pack_filesize);
-        categoryView = itemView.findViewById(R.id.sticker_pack_category);
         addButton = itemView.findViewById(R.id.add_button_on_list);
         favoriteButton = itemView.findViewById(R.id.favorite_button);
         imageRowView = itemView.findViewById(R.id.sticker_packs_list_item_image_list);
@@ -52,6 +50,5 @@ class StickerPackListItemViewHolder extends RecyclerView.ViewHolder {
         stickerImages.add(itemView.findViewById(R.id.sticker_img_2));
         stickerImages.add(itemView.findViewById(R.id.sticker_img_3));
         stickerImages.add(itemView.findViewById(R.id.sticker_img_4));
-        stickerImages.add(itemView.findViewById(R.id.sticker_img_5));
     }
 }

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.content.Context;
 import android.content.Intent;
@@ -48,6 +48,7 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
     private View clickedStickerPreview;
     float expandedViewLeftX;
     float expandedViewTopY;
+    private boolean isScrolling = false;
 
     StickerPreviewAdapter(
             @NonNull final LayoutInflater layoutInflater,
@@ -82,14 +83,44 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
 
     @Override
     public void onBindViewHolder(@NonNull final StickerPreviewViewHolder stickerPreviewViewHolder, final int i) {
-        stickerPreviewViewHolder.stickerPreviewView.setImageResource(errorResource);
         Uri uri = StickerPackLoader.getStickerUri(stickerPreviewViewHolder.stickerPreviewView.getContext(), stickerPack, stickerPack.getStickers().get(i));
-        DraweeController controller = Fresco.newDraweeControllerBuilder()
-                .setUri(uri)
-                .setAutoPlayAnimations(true)
-                .build();
-        stickerPreviewViewHolder.stickerPreviewView.setController(controller);
+        
+        Object oldUri = stickerPreviewViewHolder.stickerPreviewView.getTag(R.id.uri_tag);
+        if (!uri.equals(oldUri)) {
+            DraweeController controller = Fresco.newDraweeControllerBuilder()
+                    .setUri(uri)
+                    .setAutoPlayAnimations(false)
+                    .setOldController(stickerPreviewViewHolder.stickerPreviewView.getController())
+                    .build();
+            stickerPreviewViewHolder.stickerPreviewView.setController(controller);
+            stickerPreviewViewHolder.stickerPreviewView.setTag(R.id.uri_tag, uri);
+        }
+        
+        // Manual animation control based on scroll state
+        updateAnimationState(stickerPreviewViewHolder.stickerPreviewView);
+        
         stickerPreviewViewHolder.stickerPreviewView.setOnClickListener(v -> expandPreview(i, stickerPreviewViewHolder.stickerPreviewView));
+    }
+
+    private void updateAnimationState(SimpleDraweeView view) {
+        com.facebook.drawee.interfaces.DraweeController controller = view.getController();
+        if (controller != null) {
+            android.graphics.drawable.Animatable animatable = controller.getAnimatable();
+            if (animatable != null) {
+                if (isScrolling) {
+                    animatable.stop();
+                } else {
+                    animatable.start();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull StickerPreviewViewHolder holder) {
+        super.onViewRecycled(holder);
+        holder.stickerPreviewView.setController(null);
+        holder.stickerPreviewView.setTag(R.id.uri_tag, null);
     }
 
     @Override
@@ -108,6 +139,12 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
 
     private final RecyclerView.OnScrollListener hideExpandedViewScrollListener =
             new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                    super.onScrollStateChanged(recyclerView, newState);
+                    setScrolling(newState != RecyclerView.SCROLL_STATE_IDLE);
+                }
+
                 @Override
                 public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                     super.onScrolled(recyclerView, dx, dy);
@@ -252,6 +289,21 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
 
     private boolean isStickerPreviewExpanded() {
         return expandedStickerPreview != null && expandedStickerPreview.getVisibility() == View.VISIBLE;
+    }
+
+    public void setScrolling(boolean scrolling) {
+        if (this.isScrolling != scrolling) {
+            this.isScrolling = scrolling;
+            if (recyclerView != null) {
+                for (int i = 0; i < recyclerView.getChildCount(); i++) {
+                    View child = recyclerView.getChildAt(i);
+                    RecyclerView.ViewHolder vh = recyclerView.getChildViewHolder(child);
+                    if (vh instanceof StickerPreviewViewHolder) {
+                        updateAnimationState(((StickerPreviewViewHolder) vh).stickerPreviewView);
+                    }
+                }
+            }
+        }
     }
 
     @Override

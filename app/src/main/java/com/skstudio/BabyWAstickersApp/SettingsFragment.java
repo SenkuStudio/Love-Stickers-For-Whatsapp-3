@@ -1,4 +1,4 @@
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.content.Context;
 import android.content.Intent;
@@ -58,7 +58,7 @@ public class SettingsFragment extends Fragment {
     private void loadNativeAd(View view) {
         if (getActivity() instanceof BaseActivity) {
             BaseActivity activity = (BaseActivity) getActivity();
-            activity.loadNativeAd("ca-app-pub-6979979912689100/8693891547", view.findViewById(R.id.native_ad_container));
+            activity.loadNativeAd("ca-app-pub-6979979912689100/8912349554", view.findViewById(R.id.native_ad_container));
         }
     }
 

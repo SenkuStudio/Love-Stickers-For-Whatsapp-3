@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- This is the app's name, translators please do not translate and put in the same text as English version. Developers can consider putting in their own translation, this string must be changed before publishing -->
-    <string name="app_name" translatable="false">Cute Couple Stickers for WA 2026</string>
+    <string name="app_name" translatable="false">Cute Baby Stickers for WA 2026</string>
     <!-- Content description for the sticker pack tray image -->
     <string name="tray_image_content_description">Sticker Pack Tray Image</string>
     <!-- the title of info button in the menu that takes the user to more information about that pack showing publisher website and so on -->
@@ -42,7 +42,7 @@
     <string name="sticker_pack_animation_indicator" tools:ignore="MissingTranslation">Animated sticker pack</string>
     <!-- text we display at the end of sticker pack details page showing that users can tap sticker to see bigger version -->
     <string name="sticker_pack_details_tap_to_preview" tools:ignore="MissingTranslation">Tap to preview sticker</string>
-    <string name="admob_app_id" translatable="false">ca-app-pub-6979979912689100~2520356241</string>
+    <string name="admob_app_id" translatable="false">ca-app-pub-6979979912689100~3829016010</string>
 
     <!-- Drawer strings -->
     <string name="nav_share">Share App</string>

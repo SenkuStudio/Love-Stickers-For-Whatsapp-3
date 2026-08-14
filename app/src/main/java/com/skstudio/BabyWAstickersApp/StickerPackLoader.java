@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -18,7 +18,7 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.skstudio.WAstickersApp.utils.StickerExportHelper;
+import com.skstudio.BabyWAstickersApp.utils.StickerExportHelper;
 
 import androidx.annotation.NonNull;
 
@@ -38,21 +38,21 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import static com.skstudio.WAstickersApp.StickerContentProvider.ANDROID_APP_DOWNLOAD_LINK_IN_QUERY;
-import static com.skstudio.WAstickersApp.StickerContentProvider.ANIMATED_STICKER_PACK;
-import static com.skstudio.WAstickersApp.StickerContentProvider.AVOID_CACHE;
-import static com.skstudio.WAstickersApp.StickerContentProvider.IMAGE_DATA_VERSION;
-import static com.skstudio.WAstickersApp.StickerContentProvider.IOS_APP_DOWNLOAD_LINK_IN_QUERY;
-import static com.skstudio.WAstickersApp.StickerContentProvider.LICENSE_AGREENMENT_WEBSITE;
-import static com.skstudio.WAstickersApp.StickerContentProvider.PRIVACY_POLICY_WEBSITE;
-import static com.skstudio.WAstickersApp.StickerContentProvider.PUBLISHER_EMAIL;
-import static com.skstudio.WAstickersApp.StickerContentProvider.PUBLISHER_WEBSITE;
-import static com.skstudio.WAstickersApp.StickerContentProvider.STICKER_FILE_EMOJI_IN_QUERY;
-import static com.skstudio.WAstickersApp.StickerContentProvider.STICKER_FILE_NAME_IN_QUERY;
-import static com.skstudio.WAstickersApp.StickerContentProvider.STICKER_PACK_ICON_IN_QUERY;
-import static com.skstudio.WAstickersApp.StickerContentProvider.STICKER_PACK_IDENTIFIER_IN_QUERY;
-import static com.skstudio.WAstickersApp.StickerContentProvider.STICKER_PACK_NAME_IN_QUERY;
-import static com.skstudio.WAstickersApp.StickerContentProvider.STICKER_PACK_PUBLISHER_IN_QUERY;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.ANDROID_APP_DOWNLOAD_LINK_IN_QUERY;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.ANIMATED_STICKER_PACK;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.AVOID_CACHE;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.IMAGE_DATA_VERSION;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.IOS_APP_DOWNLOAD_LINK_IN_QUERY;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.LICENSE_AGREENMENT_WEBSITE;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.PRIVACY_POLICY_WEBSITE;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.PUBLISHER_EMAIL;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.PUBLISHER_WEBSITE;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.STICKER_FILE_EMOJI_IN_QUERY;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.STICKER_FILE_NAME_IN_QUERY;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.STICKER_PACK_ICON_IN_QUERY;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.STICKER_PACK_IDENTIFIER_IN_QUERY;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.STICKER_PACK_NAME_IN_QUERY;
+import static com.skstudio.BabyWAstickersApp.StickerContentProvider.STICKER_PACK_PUBLISHER_IN_QUERY;
 
 class StickerPackLoader {
 
@@ -102,7 +102,7 @@ class StickerPackLoader {
 
     public static FetchResult fetchFromRemoteApi(int page, int perPage, java.util.Map<String, StickerPack> packMap) throws Exception {
         ArrayList<StickerPack> stickerPackList = new ArrayList<>();
-        String urlString = "https://senkustudio.com/api/v1/wallpapers?api_key=wapi_bb28a17432e27106346ed180197deecb078a64d56ab4673a"
+        String urlString = "https://senkustudio.com/api/v1/wallpapers?api_key=wapi_aecd71b1d870368eaa81b4957223c8219e992f9025e30e84"
                 + "&page=" + page + "&per_page=" + perPage;
         URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();

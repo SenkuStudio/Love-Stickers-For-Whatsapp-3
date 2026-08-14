@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -33,7 +33,7 @@ import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
-import com.skstudio.WAstickersApp.StickerPackDetailsActivity;
+import com.skstudio.BabyWAstickersApp.StickerPackDetailsActivity;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 
@@ -109,7 +109,7 @@ public class StickerPackInfoActivity extends BaseActivity {
         AdRequest adRequest = new AdRequest.Builder().build();
 
         InterstitialAd.load(this,
-                "ca-app-pub-6979979912689100/1312365712", // ✅ USE TEST ID
+                "ca-app-pub-6979979912689100/9404776324", // ✅ USE TEST ID
                 adRequest,
                 new InterstitialAdLoadCallback() {
                     @Override

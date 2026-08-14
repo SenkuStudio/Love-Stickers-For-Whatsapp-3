@@ -46,7 +46,7 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="16dp"
                 ads:adSize="BANNER"
-                ads:adUnitId="ca-app-pub-6979979912689100/3282439071" />
+                ads:adUnitId="ca-app-pub-6979979912689100/9787919706" />
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -163,7 +163,7 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="16dp"
                 ads:adSize="BANNER"
-                ads:adUnitId="ca-app-pub-6979979912689100/7076566392" />
+                ads:adUnitId="ca-app-pub-6979979912689100/6856886061" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

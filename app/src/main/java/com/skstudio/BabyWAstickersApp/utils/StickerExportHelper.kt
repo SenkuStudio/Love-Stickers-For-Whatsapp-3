@@ -1,4 +1,4 @@
-package com.skstudio.WAstickersApp.utils
+package com.skstudio.BabyWAstickersApp.utils
 
 import android.graphics.Bitmap
 import android.graphics.Canvas

@@ -6,12 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.WAstickersApp;
+package com.skstudio.BabyWAstickersApp;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.skstudio.WAstickersApp.Sticker;
+import com.skstudio.BabyWAstickersApp.Sticker;
 
 import java.util.List;
 
