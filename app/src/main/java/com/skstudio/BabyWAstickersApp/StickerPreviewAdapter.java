@@ -177,12 +177,27 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
             expandedStickerPreview.setController(controller);
 
             expandedStickerOverlay.setVisibility(View.VISIBLE);
+            
+            Context context = expandedStickerOverlay.getContext();
+            if (context instanceof BaseActivity) {
+                ((BaseActivity) context).toggleAdsVisibility(false);
+            }
 
             expandedStickerOverlay.setOnClickListener(v -> hideExpandedStickerPreview());
             expandedStickerPreview.setOnLongClickListener(v -> {
                 shareSticker(position);
                 return true;
             });
+        }
+    }
+
+    public void hideExpandedStickerPreview() {
+        if (isStickerPreviewExpanded() && expandedStickerOverlay != null) {
+            expandedStickerOverlay.setVisibility(View.GONE);
+            Context context = expandedStickerOverlay.getContext();
+            if (context instanceof BaseActivity) {
+                ((BaseActivity) context).toggleAdsVisibility(true);
+            }
         }
     }
 
@@ -226,11 +241,6 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
         }
     }
 
-    public void hideExpandedStickerPreview() {
-        if (isStickerPreviewExpanded() && expandedStickerOverlay != null) {
-            expandedStickerOverlay.setVisibility(View.GONE);
-        }
-    }
 
     private boolean isStickerPreviewExpanded() {
         return expandedStickerOverlay != null && expandedStickerOverlay.getVisibility() == View.VISIBLE;

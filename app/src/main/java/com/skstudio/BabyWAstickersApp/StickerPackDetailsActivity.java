@@ -36,6 +36,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.WindowCompat;
 
+import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.view.SimpleDraweeView;
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
@@ -85,9 +86,10 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private StickerPack stickerPack;
     private View divider;
     private WhiteListCheckAsyncTask whiteListCheckAsyncTask;
+    private SimpleDraweeView packTrayIcon;
     private AdView mAdView1;
     private InterstitialAd interstitialAd;
-    private RewardedAd rewardedAd;
+    private RewardedAdManager rewardedAdManager;
     private boolean isAdShowing = false;
     private boolean isRewardEarned = false;
     private View loadingOverlay;
@@ -118,7 +120,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         
         TextView packNameTextView = findViewById(R.id.pack_name);
         TextView packPublisherTextView = findViewById(R.id.author);
-        ImageView packTrayIcon = findViewById(R.id.tray_image);
+        packTrayIcon = findViewById(R.id.tray_image);
         TextView packSizeTextView = findViewById(R.id.pack_size);
         SimpleDraweeView expandedStickerView = findViewById(R.id.sticker_details_expanded_sticker);
         View expandedStickerOverlay = findViewById(R.id.expanded_sticker_overlay);
@@ -163,7 +165,10 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         }
         packNameTextView.setText(stickerPack.name);
         packPublisherTextView.setText(stickerPack.publisher);
-        packTrayIcon.setImageURI(StickerPackLoader.getTrayIconUri(this, stickerPack));
+        packTrayIcon.setController(Fresco.newDraweeControllerBuilder()
+                .setUri(StickerPackLoader.getTrayIconUri(this, stickerPack))
+                .setAutoPlayAnimations(true)
+                .build());
         packSizeTextView.setText(Formatter.formatShortFileSize(this, stickerPack.getTotalSize()));
         addButton.setOnClickListener(v -> {
             // ❌ No Internet → Stop everything
@@ -181,22 +186,29 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         }
         findViewById(R.id.sticker_pack_animation_indicator).setVisibility(stickerPack.animatedStickerPack ? View.VISIBLE : View.GONE);
 
-        MobileAds.initialize(this, new OnInitializationCompleteListener() {
-            @Override
-            public void onInitializationComplete(InitializationStatus initializationStatus) {
-            }
-        });
-        loadRewardedAd();
+        rewardedAdManager = RewardedAdManager.getInstance();
+        rewardedAdManager.loadAd(this);
+        loadInterstitialAd();
         mAdView1 = findViewById(R.id.adView1);
-        AdRequest adRequest = new AdRequest.Builder().build();
         if (mAdView1 != null) {
-            mAdView1.loadAd(adRequest);
+            if (StickerApplication.isAdsInitialized()) {
+                mAdView1.loadAd(new AdRequest.Builder().build());
+            } else {
+                // If ads not initialized, check periodically or use a listener
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isFinishing() && !isDestroyed()) {
+                            if (StickerApplication.isAdsInitialized()) {
+                                mAdView1.loadAd(new AdRequest.Builder().build());
+                            } else {
+                                new Handler().postDelayed(this, 1000);
+                            }
+                        }
+                    }
+                }, 1000);
+            }
         }
-        View nativeAdContainer = findViewById(R.id.native_ad_container);
-        if (nativeAdContainer instanceof ViewGroup) {
-            loadNativeAd("ca-app-pub-6979979912689100/6946133941", (ViewGroup) nativeAdContainer);
-        }
-
         loadingOverlay = findViewById(R.id.loading_overlay);
         shimmerFrameLayout = findViewById(R.id.shimmer_view_container);
     }
@@ -204,6 +216,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private void showLoader() {
         addButton.setEnabled(false);
         loadingOverlay.setVisibility(View.VISIBLE);
+        toggleAdsVisibility(false);
         if (shimmerFrameLayout != null) {
             shimmerFrameLayout.startShimmer();
         }
@@ -212,6 +225,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private void hideLoader() {
         addButton.setEnabled(true);
         loadingOverlay.setVisibility(View.GONE);
+        toggleAdsVisibility(true);
         if (shimmerFrameLayout != null) {
             shimmerFrameLayout.stopShimmer();
         }
@@ -223,8 +237,13 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         if (!StickerPackLoader.isStickerPackDownloaded(this, stickerPack)) {
             if (downloadProgressContainer != null) {
                 downloadProgressContainer.setVisibility(View.VISIBLE);
-                downloadProgressBar.setProgress(0);
-                downloadProgressText.setText("0%");
+                toggleAdsVisibility(false);
+                if (downloadProgressBar != null) {
+                    downloadProgressBar.setProgress(0);
+                }
+                if (downloadProgressText != null) {
+                    downloadProgressText.setText("0%");
+                }
             }
         }
     }
@@ -232,6 +251,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     private void hideDownloadProgress() {
         if (downloadProgressContainer != null) {
             downloadProgressContainer.setVisibility(View.GONE);
+            toggleAdsVisibility(true);
         }
     }
 
@@ -288,7 +308,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         // Temporarily bypassing ad for testing
         // performValidationAndAddPack(identifier, stickerPackName);
         
-        if (rewardedAd != null) {
+        if (rewardedAdManager != null && rewardedAdManager.isAdLoaded()) {
             //✅ Ad already ready → show immediately
             showAd(identifier, stickerPackName);
         } else {
@@ -296,7 +316,25 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
             pendingIdentifier = identifier;
             pendingName = stickerPackName;
 
-            loadRewardedAd(); // will trigger callback
+            showLoader();
+            if (rewardedAdManager != null) {
+                rewardedAdManager.loadAd(this);
+                // We'll need a way to know when it's loaded. 
+                // For now, let's just retry after a short delay or rely on the user clicking again.
+                // A better way is to have a callback in loadAd.
+                new Handler().postDelayed(() -> {
+                    if (rewardedAdManager.isAdLoaded() && pendingIdentifier != null) {
+                        hideLoader();
+                        showAd(pendingIdentifier, pendingName);
+                        pendingIdentifier = null;
+                        pendingName = null;
+                    } else {
+                        hideLoader();
+                        // If still not loaded, just add to WA to avoid blocking user
+                        performValidationAndAddPack(identifier, stickerPackName);
+                    }
+                }, 3000);
+            }
         }
     }
 
@@ -320,86 +358,85 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
         }
     }
 
-    private void loadRewardedAd() {
-        if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+    private void loadInterstitialAd() {
+        if (!StickerApplication.isAdsInitialized()) {
+            new Handler().postDelayed(this::loadInterstitialAd, 1000);
             return;
         }
+
         AdRequest adRequest = new AdRequest.Builder().build();
 
-        RewardedAd.load(this,
-                "ca-app-pub-6979979912689100/5543804398",
+        InterstitialAd.load(this,
+                getString(R.string.admob_interstitial_ad_unit_id),
                 adRequest,
-                new RewardedAdLoadCallback() {
+                new InterstitialAdLoadCallback() {
                     @Override
-                    public void onAdLoaded(@NonNull RewardedAd ad) {
-                        if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
-                            return;
-                        }
-                        rewardedAd = ad;
+                    public void onAdLoaded(@NonNull InterstitialAd ad) {
+                        interstitialAd = ad;
+                        interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                interstitialAd = null;
+                                loadInterstitialAd();
+                            }
 
-                        // ✅ Ad is ready → hide loader
-                        hideLoader();
-
-                        // ✅ If user already clicked → show ad now
-                        if (pendingIdentifier != null) {
-                            showAd(pendingIdentifier, pendingName);
-                            pendingIdentifier = null;
-                            pendingName = null;
-                        }
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                                interstitialAd = null;
+                                loadInterstitialAd();
+                            }
+                        });
                     }
 
                     @Override
                     public void onAdFailedToLoad(@NonNull LoadAdError error) {
-                        rewardedAd = null;
-                        hideLoader();
+                        interstitialAd = null;
                     }
                 });
     }
 
-    private void showAd(String identifier, String stickerPackName) {
+    private void showInterstitial() {
+        if (interstitialAd != null) {
+            interstitialAd.show(this);
+        }
+    }
 
-        if (rewardedAd == null || isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) return;
+
+    private void showAd(String identifier, String stickerPackName) {
+        if (rewardedAdManager == null || !rewardedAdManager.isAdLoaded() || isFinishing() || isDestroyed()) return;
 
         isAdShowing = true;
         isRewardEarned = false;
+        toggleAdsVisibility(false);
 
-        rewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+        rewardedAdManager.showAd(this, new RewardedAdManager.OnRewardListener() {
+            @Override
+            public void onRewardEarned(com.google.android.gms.ads.rewarded.RewardItem rewardItem) {
+                if (isFinishing() || isDestroyed()) return;
+                isRewardEarned = true;
+                performValidationAndAddPack(identifier, stickerPackName);
+            }
 
             @Override
-            public void onAdDismissedFullScreenContent() {
-                if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
-                    return;
-                }
+            public void onAdClosed() {
+                if (isFinishing() || isDestroyed()) return;
                 isAdShowing = false;
-                hideLoader();
+                toggleAdsVisibility(true);
                 if (!isRewardEarned) {
                     Toast.makeText(StickerPackDetailsActivity.this,
                             R.string.watch_ad_to_unlock,
                             Toast.LENGTH_SHORT).show();
                 }
-
-                rewardedAd = null;
-                loadRewardedAd(); // preload next
             }
 
             @Override
-            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
-                if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
-                    return;
-                }
+            public void onAdFailedToShow() {
+                if (isFinishing() || isDestroyed()) return;
                 isAdShowing = false;
-                hideLoader();
-                rewardedAd = null;
-                loadRewardedAd();
+                toggleAdsVisibility(true);
+                // Fallback: if ad fails to show, let them add it anyway to avoid bad UX
+                performValidationAndAddPack(identifier, stickerPackName);
             }
-        });
-
-        rewardedAd.show(this, rewardItem -> {
-            if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
-                return;
-            }
-            isRewardEarned = true;
-            performValidationAndAddPack(identifier, stickerPackName);
         });
     }
 
@@ -454,6 +491,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_info && stickerPack != null) {
+            showInterstitial();
             Uri trayIconUri = StickerPackLoader.getStickerAssetUri(stickerPack.identifier, stickerPack.trayImageFile);
             launchInfoActivity(stickerPack.publisherWebsite, stickerPack.publisherEmail, stickerPack.privacyPolicyWebsite, stickerPack.licenseAgreementWebsite, trayIconUri.toString());
             return true;
@@ -511,15 +549,9 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     }
 
     private void updateAddUI(Boolean isWhitelisted) {
-        if (isWhitelisted) {
-            addButton.setVisibility(View.GONE);
-            alreadyAddedText.setVisibility(View.VISIBLE);
-            findViewById(R.id.sticker_pack_details_tap_to_preview).setVisibility(View.GONE);
-        } else {
-            addButton.setVisibility(View.VISIBLE);
-            alreadyAddedText.setVisibility(View.GONE);
-            findViewById(R.id.sticker_pack_details_tap_to_preview).setVisibility(View.VISIBLE);
-        }
+        addButton.setVisibility(View.VISIBLE);
+        alreadyAddedText.setVisibility(View.GONE);
+        findViewById(R.id.sticker_pack_details_tap_to_preview).setVisibility(View.VISIBLE);
     }
 
     static class WhiteListCheckAsyncTask extends AsyncTask<StickerPack, Void, Boolean> {

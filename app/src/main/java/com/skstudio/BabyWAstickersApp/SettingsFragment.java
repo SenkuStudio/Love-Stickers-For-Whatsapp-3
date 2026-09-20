@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.ads.AdLoader;
 import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.MobileAds;
 
 public class SettingsFragment extends Fragment {
 
@@ -50,6 +51,8 @@ public class SettingsFragment extends Fragment {
 
         view.findViewById(R.id.settings_clear_cache).setOnClickListener(v -> clearCache());
 
+        // view.findViewById(R.id.settings_ad_inspector).setOnClickListener(v -> openAdInspector());
+
         loadNativeAd(view);
 
         return view;
@@ -58,7 +61,13 @@ public class SettingsFragment extends Fragment {
     private void loadNativeAd(View view) {
         if (getActivity() instanceof BaseActivity) {
             BaseActivity activity = (BaseActivity) getActivity();
-            activity.loadNativeAd("ca-app-pub-6979979912689100/8912349554", view.findViewById(R.id.native_ad_container));
+            activity.loadNativeAd(getString(R.string.admob_native_ad_unit_id), view.findViewById(R.id.native_ad_container));
+            
+            // Ensure visibility state is respected in the fragment as well
+            View nativeAdContainer = view.findViewById(R.id.native_ad_container);
+            if (nativeAdContainer != null) {
+                nativeAdContainer.setVisibility(activity.isAdsToggledVisible() ? View.VISIBLE : View.GONE);
+            }
         }
     }
 
@@ -122,5 +131,15 @@ public class SettingsFragment extends Fragment {
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
+
+/*
+    private void openAdInspector() {
+        MobileAds.openAdInspector(requireContext(), error -> {
+            if (error != null) {
+                Toast.makeText(getContext(), "Ad Inspector error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+*/
 
 }

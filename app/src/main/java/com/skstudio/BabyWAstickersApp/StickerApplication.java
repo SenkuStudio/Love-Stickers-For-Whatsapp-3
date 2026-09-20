@@ -26,8 +26,20 @@ import okhttp3.OkHttpClient;
 import com.facebook.imagepipeline.cache.MemoryCacheParams;
 import com.facebook.common.internal.Supplier;
 import android.app.ActivityManager;
+import android.os.AsyncTask;
+import android.os.StrictMode;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.RequestConfiguration;
+import com.unity3d.ads.metadata.MetaData;
+import java.util.Arrays;
 
 public class StickerApplication extends Application {
+
+    private static boolean isAdsInitialized = false;
+
+    public static boolean isAdsInitialized() {
+        return isAdsInitialized;
+    }
 
     @Override
     public void onCreate() {
@@ -72,6 +84,27 @@ public class StickerApplication extends Application {
                 .build();
 
         Fresco.initialize(this, config);
+
+        new AppOpenAdManager(this);
+        
+        // Set Unity Ads Privacy Metadata before initialization
+        MetaData gdprMetaData = new MetaData(this);
+        gdprMetaData.set("gdpr.consent", true);
+        gdprMetaData.commit();
+
+        MetaData ccpaMetaData = new MetaData(this);
+        ccpaMetaData.set("privacy.consent", true);
+        ccpaMetaData.commit();
+        
+        // Initialize Mobile Ads on the Main Thread.
+        // Mediation adapters (specifically Unity Ads) require UI thread access for initialization
+        // to properly set up internal components like WebViews.
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            MobileAds.initialize(this, initializationStatus -> {
+                isAdsInitialized = true;
+            });
+
+        });
         
         SharedPreferences prefs = getSharedPreferences("settings_prefs", Context.MODE_PRIVATE);
         int savedTheme = prefs.getInt("selected_theme", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);

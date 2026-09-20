@@ -67,9 +67,17 @@ public class StickerPackInfoActivity extends BaseActivity {
         final TextView trayIcon = findViewById(R.id.tray_icon);
         mAdView = findViewById(R.id.adView1);
         mAdView1 = findViewById(R.id.adView10);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
-        mAdView1.loadAd(adRequest);
+        
+        // Use the activity's visibility state for ads
+        toggleAdsVisibility(true);
+
+        if (StickerApplication.isAdsInitialized()) {
+            AdRequest adRequest = new AdRequest.Builder().build();
+            mAdView.loadAd(adRequest);
+            mAdView1.loadAd(adRequest);
+        } else {
+            // Check for initialization if needed, or rely on next resume
+        }
         try {
             final InputStream inputStream = getContentResolver().openInputStream(Uri.parse(trayIconUriString));
             final BitmapDrawable trayDrawable = new BitmapDrawable(getResources(), inputStream);
@@ -89,6 +97,8 @@ public class StickerPackInfoActivity extends BaseActivity {
         }
 
         setupTextView(website, R.id.view_webpage);
+        
+        loadNativeAd(getString(R.string.admob_native_ad_unit_id), findViewById(R.id.native_ad_container));
 
         final TextView sendEmail = findViewById(R.id.send_email);
         if (TextUtils.isEmpty(email)) {
@@ -102,14 +112,40 @@ public class StickerPackInfoActivity extends BaseActivity {
         setupTextView(licenseAgreement, R.id.license_agreement);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mAdView != null) mAdView.resume();
+        if (mAdView1 != null) mAdView1.resume();
+    }
+
+    @Override
+    protected void onPause() {
+        if (mAdView != null) mAdView.pause();
+        if (mAdView1 != null) mAdView1.pause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mAdView != null) mAdView.destroy();
+        if (mAdView1 != null) mAdView1.destroy();
+        super.onDestroy();
+    }
+
     private void loadInterstitialAd() {
 
         if (isAdShown) return; // ✅ STOP if already shown
 
+        if (!StickerApplication.isAdsInitialized()) {
+            new android.os.Handler().postDelayed(this::loadInterstitialAd, 1000);
+            return;
+        }
+
         AdRequest adRequest = new AdRequest.Builder().build();
 
         InterstitialAd.load(this,
-                "ca-app-pub-6979979912689100/9404776324", // ✅ USE TEST ID
+                getString(R.string.admob_interstitial_ad_unit_id),
                 adRequest,
                 new InterstitialAdLoadCallback() {
                     @Override
@@ -131,22 +167,19 @@ public class StickerPackInfoActivity extends BaseActivity {
 
     private void showInterstitial() {
         if (interstitialAd != null && !isAdShown) {
-
             isAdShown = true; // ✅ MARK AS SHOWN
-
+            toggleAdsVisibility(false);
             interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-
                 @Override
                 public void onAdDismissedFullScreenContent() {
                     interstitialAd = null;
-
-                    // ❌ REMOVE THIS LINE (IMPORTANT)
-                    // loadInterstitialAd();
+                    toggleAdsVisibility(true);
                 }
 
                 @Override
                 public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
                     interstitialAd = null;
+                    toggleAdsVisibility(true);
                 }
             });
 

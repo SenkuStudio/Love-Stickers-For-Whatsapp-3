@@ -57,6 +57,16 @@ class StickerPack implements Parcelable {
         this.animatedStickerPack = animatedStickerPack;
     }
 
+    void setAnimatedStickerPack(boolean animatedStickerPack) {
+        try {
+            java.lang.reflect.Field field = StickerPack.class.getDeclaredField("animatedStickerPack");
+            field.setAccessible(true);
+            field.setBoolean(this, animatedStickerPack);
+        } catch (Exception e) {
+            android.util.Log.e("StickerPack", "Error setting animatedStickerPack", e);
+        }
+    }
+
     void setIsWhitelisted(boolean isWhitelisted) {
         this.isWhitelisted = isWhitelisted;
     }

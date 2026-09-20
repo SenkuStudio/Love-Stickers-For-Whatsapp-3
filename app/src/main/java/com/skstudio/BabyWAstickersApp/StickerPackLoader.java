@@ -173,14 +173,7 @@ class StickerPackLoader {
                     Sticker sticker = new Sticker(slug + ".webp", Collections.singletonList("❤️"), imageUrl);
                     sticker.isFeatured = isFeatured;
                     if (isFeatured) {
-                        try {
-                            // If it's featured, it's animated, so the pack must be animated too.
-                            java.lang.reflect.Field field = StickerPack.class.getDeclaredField("animatedStickerPack");
-                            field.setAccessible(true);
-                            field.setBoolean(pack, true);
-                        } catch (Exception e) {
-                            Log.e("StickerPackLoader", "Error setting animatedStickerPack", e);
-                        }
+                        pack.setAnimatedStickerPack(true);
                     }
                     pack.getStickers().add(sticker);
                 }

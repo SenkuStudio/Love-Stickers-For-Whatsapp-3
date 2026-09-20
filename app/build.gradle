@@ -2,19 +2,18 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.skstudio.BabyWAstickersApp"  // Add this to define the namespace
-     compileSdkVersion 36
+    namespace "com.skstudio.BabyWAstickersApp"
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.skstudio.BabyWAstickersApp"
-        minSdkVersion 21
-        targetSdkVersion 36
-        versionCode 4
-        versionName "4.1.7"
+        minSdkVersion 23
+        targetSdk 36
+        versionCode 27
+        versionName "27.1.7"
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        // Define ContentProvider authority
         def contentProviderAuthority = applicationId + ".stickercontentprovider"
         manifestPlaceholders = [contentProviderAuthority: contentProviderAuthority]
         buildConfigField("String", "CONTENT_PROVIDER_AUTHORITY", "\"${contentProviderAuthority}\"")
@@ -43,11 +42,11 @@ android {
     }
 
     aaptOptions {
-        noCompress "webp" // Preserve .webp files without compression
+        noCompress "webp"
     }
 
     buildFeatures {
-        buildConfig true // Enable BuildConfig generation
+        buildConfig true
     }
 
     packaging {
@@ -60,30 +59,30 @@ android {
         }
     }
 }
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.8.0'
+    implementation 'com.google.android.material:material:1.14.0'
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'androidx.multidex:multidex:2.0.1'
-    implementation 'com.google.android.gms:play-services-ads:23.0.0'
-    implementation 'com.google.ads.mediation:unity:4.9.2.0'
+    implementation 'com.google.android.gms:play-services-ads:25.4.0'
+    implementation 'com.unity3d.ads:unity-ads:4.20.0'
+    implementation 'com.google.ads.mediation:unity:4.20.0.0'
     implementation 'com.facebook.shimmer:shimmer:0.5.0'
+    implementation 'androidx.lifecycle:lifecycle-process:2.11.0'
 
-    // Fresco dependencies for image handling
-    def fresco_version = '3.6.0' // Latest version for 16KB support
+    def fresco_version = '3.7.0'
     implementation "com.facebook.fresco:fresco:$fresco_version"
     implementation "com.facebook.fresco:webpsupport:$fresco_version"
     implementation "com.facebook.fresco:animated-webp:$fresco_version"
     implementation "com.facebook.fresco:animated-base:$fresco_version"
     implementation "com.facebook.fresco:imagepipeline-okhttp3:$fresco_version"
 
-    // Explicitly add SoLoader to avoid versioning issues
     implementation 'com.facebook.soloader:soloader:0.12.1'
 
-    // Testing dependencies
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
@@ -91,6 +90,6 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)  // Ensure you need Java 17; otherwise, default to Java 8
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }

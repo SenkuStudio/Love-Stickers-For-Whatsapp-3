@@ -45,10 +45,11 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private static final int VIEW_TYPE_AD = 2;
     private static final int AD_INTERVAL = 5;
 
-    private final String[] adUnitIds = {
-            "ca-app-pub-6979979912689100/5718531385",
-            "ca-app-pub-6979979912689100/4342016325"
-    };
+    private String[] getAdUnitIds(Context context) {
+        return new String[]{
+                context.getString(R.string.admob_native_ad_unit_id)
+        };
+    }
 
     @NonNull
     private List<StickerPack> stickerPacks;
@@ -202,13 +203,19 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             View adContent = holder.itemView.findViewById(R.id.ad_content);
             if (shimmerLayout != null) shimmerLayout.setVisibility(View.GONE);
             if (adContent != null) adContent.setVisibility(View.VISIBLE);
-            populateNativeAdView(cachedAd, (com.google.android.gms.ads.nativead.NativeAdView) holder.itemView);
+            BaseActivity.populateNativeAdView(cachedAd, (com.google.android.gms.ads.nativead.NativeAdView) holder.itemView);
+            return;
+        }
+
+        if (!StickerApplication.isAdsInitialized()) {
+            holder.itemView.postDelayed(() -> loadNativeAdForViewHolder(holder, position), 1000);
             return;
         }
 
         Context context = holder.itemView.getContext();
-        int adIndex = (position / (AD_INTERVAL + 1)) % adUnitIds.length;
-        String adUnitId = adUnitIds[adIndex];
+        String[] ids = getAdUnitIds(context);
+        int adIndex = (position / (AD_INTERVAL + 1)) % ids.length;
+        String adUnitId = ids[adIndex];
 
         View shimmerLayout = holder.itemView.findViewById(R.id.shimmer_layout);
         View adContent = holder.itemView.findViewById(R.id.ad_content);
@@ -225,7 +232,7 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     adCache.put(position, nativeAd);
                     if (shimmerLayout != null) shimmerLayout.setVisibility(View.GONE);
                     if (adContent != null) adContent.setVisibility(View.VISIBLE);
-                    populateNativeAdView(nativeAd, (com.google.android.gms.ads.nativead.NativeAdView) holder.itemView);
+                    BaseActivity.populateNativeAdView(nativeAd, (com.google.android.gms.ads.nativead.NativeAdView) holder.itemView);
                 })
                 .withAdListener(new com.google.android.gms.ads.AdListener() {
                     @Override
@@ -240,54 +247,6 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         adLoader.loadAd(new com.google.android.gms.ads.AdRequest.Builder().build());
     }
 
-    private void populateNativeAdView(com.google.android.gms.ads.nativead.NativeAd nativeAd, com.google.android.gms.ads.nativead.NativeAdView adView) {
-        adView.setVisibility(View.VISIBLE);
-        ViewGroup.LayoutParams params = adView.getLayoutParams();
-        params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        adView.setLayoutParams(params);
-
-        adView.setHeadlineView(adView.findViewById(R.id.ad_headline));
-        adView.setBodyView(adView.findViewById(R.id.ad_body));
-        adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
-        adView.setIconView(adView.findViewById(R.id.ad_app_icon));
-        adView.setAdvertiserView(adView.findViewById(R.id.ad_advertiser));
-        adView.setMediaView(adView.findViewById(R.id.ad_media));
-
-        ((android.widget.TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
-        if (adView.getMediaView() != null) {
-            adView.getMediaView().setMediaContent(nativeAd.getMediaContent());
-        }
-
-        if (nativeAd.getBody() == null) {
-            adView.getBodyView().setVisibility(View.INVISIBLE);
-        } else {
-            adView.getBodyView().setVisibility(View.VISIBLE);
-            ((android.widget.TextView) adView.getBodyView()).setText(nativeAd.getBody());
-        }
-
-        if (nativeAd.getCallToAction() == null) {
-            adView.getCallToActionView().setVisibility(View.INVISIBLE);
-        } else {
-            adView.getCallToActionView().setVisibility(View.VISIBLE);
-            ((android.widget.Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
-        }
-
-        if (nativeAd.getIcon() == null) {
-            adView.getIconView().setVisibility(View.GONE);
-        } else {
-            ((android.widget.ImageView) adView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
-            adView.getIconView().setVisibility(View.VISIBLE);
-        }
-
-        if (nativeAd.getAdvertiser() == null) {
-            adView.getAdvertiserView().setVisibility(View.INVISIBLE);
-        } else {
-            ((android.widget.TextView) adView.getAdvertiserView()).setText(nativeAd.getAdvertiser());
-            adView.getAdvertiserView().setVisibility(View.VISIBLE);
-        }
-
-        adView.setNativeAd(nativeAd);
-    }
 
     @Override
     public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
@@ -297,6 +256,14 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             for (SimpleDraweeView rowImage : viewHolder.stickerImages) {
                 rowImage.setController(null);
                 rowImage.setTag(R.id.uri_tag, null);
+            }
+        } else if (holder instanceof AdViewHolder) {
+            int position = holder.getAdapterPosition();
+            if (position != RecyclerView.NO_POSITION) {
+                com.google.android.gms.ads.nativead.NativeAd nativeAd = adCache.remove(position);
+                if (nativeAd != null) {
+                    nativeAd.destroy();
+                }
             }
         }
     }
@@ -310,18 +277,12 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void setAddButtonAppearance(MaterialButton addButton, StickerPack pack) {
-        if (pack.getIsWhitelisted()) {
-            addButton.setIconResource(R.drawable.sticker_3rdparty_added);
-            addButton.setClickable(false);
-            addButton.setOnClickListener(null);
-            setBackground(addButton, null);
-        } else {
-            addButton.setIconResource(R.drawable.sticker_3rdparty_add);
-            addButton.setOnClickListener(v -> onAddButtonClickedListener.onAddButtonClicked(pack));
-            TypedValue outValue = new TypedValue();
-            addButton.getContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
-            addButton.setBackgroundResource(outValue.resourceId);
-        }
+        addButton.setIconResource(R.drawable.sticker_3rdparty_add);
+        addButton.setClickable(true);
+        addButton.setOnClickListener(v -> onAddButtonClickedListener.onAddButtonClicked(pack));
+        TypedValue outValue = new TypedValue();
+        addButton.getContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
+        addButton.setBackgroundResource(outValue.resourceId);
     }
 
     private void setBackground(View view, Drawable background) {

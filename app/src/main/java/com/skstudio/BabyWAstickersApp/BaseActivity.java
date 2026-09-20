@@ -35,72 +35,131 @@ public abstract class BaseActivity extends AppCompatActivity {
         return true;
     }
 
+    private boolean isAdsToggledVisible = true;
+
+    protected void toggleAdsVisibility(boolean show) {
+        isAdsToggledVisible = show;
+        View adView = findViewById(R.id.adView);
+        View adView1 = findViewById(R.id.adView1);
+        View adView10 = findViewById(R.id.adView10);
+        View nativeAdContainer = findViewById(R.id.native_ad_container);
+        View bottomAdContainer = findViewById(R.id.bottom_ad_container);
+        
+        int visibility = show ? View.VISIBLE : View.GONE;
+        
+        if (adView != null) adView.setVisibility(visibility);
+        if (adView1 != null) adView1.setVisibility(visibility);
+        if (adView10 != null) adView10.setVisibility(visibility);
+        if (nativeAdContainer != null) nativeAdContainer.setVisibility(visibility);
+        if (bottomAdContainer != null) bottomAdContainer.setVisibility(visibility);
+        
+        View shimmerViewContainer = findViewById(R.id.shimmer_view_container);
+        if (shimmerViewContainer != null) shimmerViewContainer.setVisibility(visibility);
+    }
+
     protected void loadNativeAd(String adUnitId, ViewGroup adContainer) {
         if (adContainer == null || isFinishing() || isDestroyed()) return;
+        
+        if (!StickerApplication.isAdsInitialized()) {
+            adContainer.postDelayed(() -> loadNativeAd(adUnitId, adContainer), 1000);
+            return;
+        }
+
         AdLoader adLoader = new AdLoader.Builder(this, adUnitId)
                 .forNativeAd(nativeAd -> {
-                    if (adContainer == null || isFinishing() || isDestroyed()) return;
-                    NativeAdView adView = (NativeAdView) getLayoutInflater()
-                            .inflate(R.layout.layout_native_ad, null);
-                    populateNativeAdView(nativeAd, adView);
-                    adContainer.removeAllViews();
-                    adContainer.addView(adView);
-                    adContainer.setVisibility(View.VISIBLE);
+                    if (adContainer == null || isFinishing() || isDestroyed()) {
+                        nativeAd.destroy();
+                        return;
+                    }
+                    try {
+                        NativeAdView adView = (NativeAdView) getLayoutInflater()
+                                .inflate(R.layout.layout_native_ad, adContainer, false);
+                        populateNativeAdView(nativeAd, adView);
+                        adContainer.removeAllViews();
+                        adContainer.addView(adView);
+                        
+                        // Only show if the global toggle allows it
+                        adContainer.setVisibility(isAdsToggledVisible ? View.VISIBLE : View.GONE);
+                        
+                        View shimmer = adView.findViewById(R.id.shimmer_layout);
+                        if (shimmer != null) shimmer.setVisibility(View.GONE);
+                        View content = adView.findViewById(R.id.ad_content);
+                        if (content != null) content.setVisibility(View.VISIBLE);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        nativeAd.destroy();
+                    }
                 })
                 .build();
         adLoader.loadAd(new AdRequest.Builder().build());
     }
 
-    private void populateNativeAdView(NativeAd nativeAd, NativeAdView adView) {
+    public static void populateNativeAdView(NativeAd nativeAd, NativeAdView adView) {
         adView.setHeadlineView(adView.findViewById(R.id.ad_headline));
         adView.setBodyView(adView.findViewById(R.id.ad_body));
         adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
         adView.setIconView(adView.findViewById(R.id.ad_app_icon));
         adView.setAdvertiserView(adView.findViewById(R.id.ad_advertiser));
-        adView.setMediaView(adView.findViewById(R.id.ad_media));
-
-        View closeButton = adView.findViewById(R.id.ad_close_button);
-        if (closeButton != null) {
-            closeButton.setOnClickListener(v -> {
-                adView.setVisibility(View.GONE);
-                if (adView.getParent() instanceof ViewGroup) {
-                    ((ViewGroup) adView.getParent()).setVisibility(View.GONE);
-                }
-            });
+        
+        View mediaView = adView.findViewById(R.id.ad_media);
+        if (mediaView instanceof MediaView) {
+            adView.setMediaView((MediaView) mediaView);
         }
 
-        ((TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
-        ((MediaView) adView.getMediaView()).setMediaContent(nativeAd.getMediaContent());
+        if (adView.getHeadlineView() instanceof TextView) {
+            ((TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
+        }
+
+        View adAttribution = adView.findViewById(R.id.ad_attribution);
+        if (adAttribution != null) {
+            adAttribution.setVisibility(View.VISIBLE);
+        }
+        
+        if (adView.getMediaView() != null && nativeAd.getMediaContent() != null) {
+            adView.getMediaView().setMediaContent(nativeAd.getMediaContent());
+        }
 
         if (nativeAd.getBody() == null) {
-            adView.getBodyView().setVisibility(View.INVISIBLE);
+            if (adView.getBodyView() != null) adView.getBodyView().setVisibility(View.INVISIBLE);
         } else {
-            adView.getBodyView().setVisibility(View.VISIBLE);
-            ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+            if (adView.getBodyView() instanceof TextView) {
+                adView.getBodyView().setVisibility(View.VISIBLE);
+                ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+            }
         }
 
         if (nativeAd.getCallToAction() == null) {
-            adView.getCallToActionView().setVisibility(View.INVISIBLE);
+            if (adView.getCallToActionView() != null) adView.getCallToActionView().setVisibility(View.INVISIBLE);
         } else {
-            adView.getCallToActionView().setVisibility(View.VISIBLE);
-            ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+            if (adView.getCallToActionView() instanceof Button) {
+                adView.getCallToActionView().setVisibility(View.VISIBLE);
+                ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+            }
         }
 
         if (nativeAd.getIcon() == null) {
-            adView.getIconView().setVisibility(View.GONE);
+            if (adView.getIconView() != null) adView.getIconView().setVisibility(View.GONE);
         } else {
-            ((ImageView) adView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
-            adView.getIconView().setVisibility(View.VISIBLE);
+            if (adView.getIconView() instanceof ImageView) {
+                ((ImageView) adView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
+                adView.getIconView().setVisibility(View.VISIBLE);
+            }
         }
 
         if (nativeAd.getAdvertiser() == null) {
-            adView.getAdvertiserView().setVisibility(View.INVISIBLE);
+            if (adView.getAdvertiserView() != null) adView.getAdvertiserView().setVisibility(View.INVISIBLE);
         } else {
-            ((TextView) adView.getAdvertiserView()).setText(nativeAd.getAdvertiser());
-            adView.getAdvertiserView().setVisibility(View.VISIBLE);
+            if (adView.getAdvertiserView() instanceof TextView) {
+                ((TextView) adView.getAdvertiserView()).setText(nativeAd.getAdvertiser());
+                adView.getAdvertiserView().setVisibility(View.VISIBLE);
+            }
         }
 
         adView.setNativeAd(nativeAd);
+    }
+
+    public boolean isAdsToggledVisible() {
+        return isAdsToggledVisible;
     }
 
     public static final class MessageDialogFragment extends DialogFragment {

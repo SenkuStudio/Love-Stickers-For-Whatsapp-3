@@ -182,6 +182,19 @@
             app:icon="@android:drawable/ic_menu_delete"
             app:iconTint="@color/textSecondary" />
 
+        <!--
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settings_ad_inspector"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="start|center_vertical"
+            android:text="Open Ad Inspector"
+            android:textColor="@color/textPrimary"
+            app:icon="@android:drawable/ic_menu_info_details"
+            app:iconTint="@color/textSecondary" />
+        -->
+
         <FrameLayout
             android:id="@+id/native_ad_container"
             android:layout_width="match_parent"

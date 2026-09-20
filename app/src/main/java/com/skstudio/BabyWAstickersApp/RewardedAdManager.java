@@ -22,7 +22,6 @@ import com.google.android.gms.ads.AdapterResponseInfo;
  */
 public class RewardedAdManager {
     private static final String TAG = "RewardedAdManager";
-    private static final String AD_UNIT_ID = "ca-app-pub-6979979912689100/7890766137"; // Replace with your production ID
 
     private static RewardedAdManager instance;
     private RewardedAd rewardedAd;
@@ -30,6 +29,8 @@ public class RewardedAdManager {
 
     public interface OnRewardListener {
         void onRewardEarned(RewardItem rewardItem);
+        default void onAdClosed() {}
+        default void onAdFailedToShow() {}
     }
 
     private RewardedAdManager() {}
@@ -52,8 +53,9 @@ public class RewardedAdManager {
         isLoading = true;
         Log.d(TAG, "Ad loading started...");
 
+        String adUnitId = context.getString(R.string.admob_rewarded_ad_unit_id);
         AdRequest adRequest = new AdRequest.Builder().build();
-        RewardedAd.load(context, AD_UNIT_ID, adRequest, new RewardedAdLoadCallback() {
+        RewardedAd.load(context, adUnitId, adRequest, new RewardedAdLoadCallback() {
             @Override
             public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                 isLoading = false;
@@ -113,14 +115,24 @@ public class RewardedAdManager {
             public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
                 Log.e(TAG, "Ad failed to show: " + adError.getMessage());
                 rewardedAd = null;
-                loadAd(activity); // Reload ad after failure
+                if (listener != null) {
+                    listener.onAdFailedToShow();
+                }
+                if (activity != null && !activity.isFinishing() && (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 || !activity.isDestroyed())) {
+                    loadAd(activity.getApplicationContext());
+                }
             }
 
             @Override
             public void onAdDismissedFullScreenContent() {
                 Log.d(TAG, "Ad dismissed.");
                 rewardedAd = null;
-                loadAd(activity); // Auto-reload after dismissal
+                if (listener != null) {
+                    listener.onAdClosed();
+                }
+                if (activity != null && !activity.isFinishing() && (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 || !activity.isDestroyed())) {
+                    loadAd(activity.getApplicationContext());
+                }
             }
         });
 
