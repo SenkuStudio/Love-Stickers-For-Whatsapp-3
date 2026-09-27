@@ -5,6 +5,7 @@ import androidx.core.view.WindowCompat;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -45,8 +46,16 @@ public class SplashActivity extends AppCompatActivity {
     // ✅ Internet check loop
     private void checkInternetAndProceed() {
         if (isInternetAvailable()) {
-            // ✅ Internet available → go to StickerPackListActivity
-            startActivity(new Intent(SplashActivity.this, StickerPackListActivity.class));
+            SharedPreferences prefs = getSharedPreferences("settings_prefs", Context.MODE_PRIVATE);
+            boolean onboardingCompleted = prefs.getBoolean("onboarding_completed", false);
+
+            if (onboardingCompleted) {
+                // ✅ Onboarding done → go to StickerPackListActivity
+                startActivity(new Intent(SplashActivity.this, StickerPackListActivity.class));
+            } else {
+                // ➡️ Go to Onboarding
+                startActivity(new Intent(SplashActivity.this, OnboardingActivity.class));
+            }
             finish();
         } else {
            Toast.makeText(this, "Internet not available", Toast.LENGTH_SHORT).show();

@@ -80,4 +80,18 @@
     <string name="percent_format">%1$d%%</string>
     <string name="long_press_to_share">Long press to share</string>
     <string name="all_packs">All Packs</string>
+
+    <!-- Onboarding Strings -->
+    <string name="onboarding_title_1">Discover Amazing Stickers</string>
+    <string name="onboarding_desc_1">Browse thousands of beautiful love and romantic stickers for every occasion.</string>
+    <string name="onboarding_title_2">Easy to Use</string>
+    <string name="onboarding_desc_2">Add your favorite packs to WhatsApp with just one tap and start sharing.</string>
+    <string name="onboarding_title_3">Express with Love</string>
+    <string name="onboarding_desc_3">Express your feelings better with our special collection of romantic stickers.</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_get_started">Get Started</string>
+    <string name="btn_skip">Skip</string>
+    <string name="onboarding_page_1">Page 1</string>
+    <string name="onboarding_page_2">Page 2</string>
+    <string name="onboarding_page_3">Page 3</string>
 </resources>
