@@ -13,6 +13,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 import com.google.android.material.button.MaterialButton;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,7 @@ public class OnboardingActivity extends AppCompatActivity {
     private MaterialButton btnSkip;
     private ImageView[] dots;
     private OnboardingAdapter adapter;
+    private AdView mAdView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +43,12 @@ public class OnboardingActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.view_pager);
         btnNext = findViewById(R.id.btn_next);
         btnSkip = findViewById(R.id.btn_skip);
-        
+        mAdView = findViewById(R.id.adView_onboarding);
+
+        if (StickerApplication.isAdsInitialized()) {
+            AdRequest adRequest = new AdRequest.Builder().build();
+            mAdView.loadAd(adRequest);
+        }
         dots = new ImageView[3];
         dots[0] = findViewById(R.id.dot1);
         dots[1] = findViewById(R.id.dot2);

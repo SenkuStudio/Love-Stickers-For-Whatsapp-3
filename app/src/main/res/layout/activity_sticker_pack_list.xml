@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             ads:adSize="BANNER"
-            ads:adUnitId="@string/admob_banner_ad_unit_id" />
+            ads:adUnitId="@string/admob_banner_ad_unit_id_list" />
 
         <!-- Category Horizontal List -->
         <androidx.recyclerview.widget.RecyclerView

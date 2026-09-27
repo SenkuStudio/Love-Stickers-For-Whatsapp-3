@@ -41,4 +41,40 @@
 	<string name="sticker_pack_animation_indicator">ຊຸດສະຕິກເກີເຄື່ອນໄຫວ</string>
 	<!-- text we display at the end of sticker pack details page showing that users can tap sticker to see bigger version -->
 	<string name="sticker_pack_details_tap_to_preview">ແຕະເພື່ອເບິ່ງຕົວຢ່າງສະຕິກເກີ</string>
+
+    <!-- AdMob Ad IDs (Internal Use) -->
+    <string name="admob_app_id" translatable="false">ca-app-pub-6979979912689100~2112280095</string>
+    <string name="admob_app_open_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/2670769019</string>
+
+    <!-- Banner IDs -->
+    <string name="admob_banner_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/4175422379</string>
+    <string name="admob_banner_ad_unit_id_list" translatable="false">ca-app-pub-6979979912689100/9236177362</string>
+    <string name="admob_banner_ad_unit_id_details" translatable="false">ca-app-pub-6979979912689100/6906450936</string>
+    <string name="admob_banner_ad_unit_id_info" translatable="false">ca-app-pub-6979979912689100/8058827068</string>
+    <string name="admob_banner_ad_unit_id_onboarding" translatable="false">ca-app-pub-6979979912689100/1382661515</string>
+    <string name="admob_banner_ad_unit_id_backup" translatable="false">ca-app-pub-6979979912689100/2967205920</string>
+
+    <!-- Interstitial IDs -->
+    <string name="admob_interstitial_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/9895576350</string>
+    <string name="admob_interstitial_ad_unit_id_info" translatable="false">ca-app-pub-6979979912689100/3864345464</string>
+
+    <!-- Native IDs -->
+    <string name="admob_native_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/8027960910</string>
+    <string name="admob_native_ad_unit_id_settings" translatable="false">ca-app-pub-6979979912689100/6714879242</string>
+    <string name="admob_native_ad_unit_id_list" translatable="false">ca-app-pub-6979979912689100/5262196777</string>
+
+    <!-- Rewarded IDs -->
+    <string name="admob_rewarded_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/3983850689</string>
+    <string name="admob_rewarded_ad_unit_id_backup" translatable="false">ca-app-pub-6979979912689100/2636033434</string>
+
+    <!-- Onboarding Strings -->
+    <string name="onboarding_title_1">Discover Amazing Stickers</string>
+    <string name="onboarding_desc_1">Browse thousands of beautiful love and romantic stickers for every occasion.</string>
+    <string name="onboarding_title_2">Easy to Use</string>
+    <string name="onboarding_desc_2">Add your favorite packs to WhatsApp with just one tap and start sharing.</string>
+    <string name="onboarding_title_3">Express with Love</string>
+    <string name="onboarding_desc_3">Express your feelings better with our special collection of romantic stickers.</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_get_started">Get Started</string>
+    <string name="btn_skip">Skip</string>
 </resources>

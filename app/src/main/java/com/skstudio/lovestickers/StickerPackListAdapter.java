@@ -47,7 +47,7 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private String[] getAdUnitIds(Context context) {
         return new String[]{
-                context.getString(R.string.admob_native_ad_unit_id)
+                context.getString(R.string.admob_native_ad_unit_id_list)
         };
     }
 

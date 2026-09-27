@@ -61,7 +61,7 @@ public class SettingsFragment extends Fragment {
     private void loadNativeAd(View view) {
         if (getActivity() instanceof BaseActivity) {
             BaseActivity activity = (BaseActivity) getActivity();
-            activity.loadNativeAd(getString(R.string.admob_native_ad_unit_id), view.findViewById(R.id.native_ad_container));
+            activity.loadNativeAd(getString(R.string.admob_native_ad_unit_id_settings), view.findViewById(R.id.native_ad_container));
             
             // Ensure visibility state is respected in the fragment as well
             View nativeAdContainer = view.findViewById(R.id.native_ad_container);

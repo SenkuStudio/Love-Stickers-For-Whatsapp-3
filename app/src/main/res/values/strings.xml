@@ -44,10 +44,27 @@
     <string name="sticker_pack_details_tap_to_preview" tools:ignore="MissingTranslation">Tap to preview sticker</string>
     <string name="admob_app_id" translatable="false">ca-app-pub-6979979912689100~2112280095</string>
     <string name="admob_app_open_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/2670769019</string>
-    <string name="admob_interstitial_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/9895576350</string>
-    <string name="admob_rewarded_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/3983850689</string>
-    <string name="admob_native_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/8027960910</string>
+
+    <!-- Banner IDs -->
     <string name="admob_banner_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/4175422379</string>
+    <string name="admob_banner_ad_unit_id_list" translatable="false">ca-app-pub-6979979912689100/9236177362</string>
+    <string name="admob_banner_ad_unit_id_details" translatable="false">ca-app-pub-6979979912689100/6906450936</string>
+    <string name="admob_banner_ad_unit_id_info" translatable="false">ca-app-pub-6979979912689100/8058827068</string>
+    <string name="admob_banner_ad_unit_id_onboarding" translatable="false">ca-app-pub-6979979912689100/1382661515</string>
+    <string name="admob_banner_ad_unit_id_backup" translatable="false">ca-app-pub-6979979912689100/2967205920</string>
+
+    <!-- Interstitial IDs -->
+    <string name="admob_interstitial_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/9895576350</string>
+    <string name="admob_interstitial_ad_unit_id_info" translatable="false">ca-app-pub-6979979912689100/3864345464</string>
+
+    <!-- Native IDs -->
+    <string name="admob_native_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/8027960910</string>
+    <string name="admob_native_ad_unit_id_settings" translatable="false">ca-app-pub-6979979912689100/6714879242</string>
+    <string name="admob_native_ad_unit_id_list" translatable="false">ca-app-pub-6979979912689100/5262196777</string>
+
+    <!-- Rewarded IDs -->
+    <string name="admob_rewarded_ad_unit_id" translatable="false">ca-app-pub-6979979912689100/3983850689</string>
+    <string name="admob_rewarded_ad_unit_id_backup" translatable="false">ca-app-pub-6979979912689100/2636033434</string>
 
     <!-- Drawer strings -->
     <string name="nav_share">Share App</string>

@@ -49,7 +49,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="16dp"
                     ads:adSize="BANNER"
-                    ads:adUnitId="@string/admob_banner_ad_unit_id" />
+                    ads:adUnitId="@string/admob_banner_ad_unit_id_info" />
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
@@ -180,7 +180,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 ads:adSize="BANNER"
-                ads:adUnitId="@string/admob_banner_ad_unit_id" />
+                ads:adUnitId="@string/admob_banner_ad_unit_id_backup" />
         </FrameLayout>
 
     </LinearLayout>
