@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.BabyWAstickersApp;
+package com.skstudio.lovestickers;
 
 import android.view.View;
 import android.widget.ImageButton;

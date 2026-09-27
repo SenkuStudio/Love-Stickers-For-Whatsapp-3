@@ -6,15 +6,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.BabyWAstickersApp;
+package com.skstudio.lovestickers;
 
 import android.text.TextUtils;
 import android.util.JsonReader;
 
 import androidx.annotation.NonNull;
 
-import com.skstudio.BabyWAstickersApp.Sticker;
-import com.skstudio.BabyWAstickersApp.StickerPack;
+import com.skstudio.lovestickers.Sticker;
+import com.skstudio.lovestickers.StickerPack;
 
 import java.io.IOException;
 import java.io.InputStream;

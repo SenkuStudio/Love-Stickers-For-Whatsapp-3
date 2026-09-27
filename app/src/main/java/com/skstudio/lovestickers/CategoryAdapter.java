@@ -1,4 +1,4 @@
-package com.skstudio.BabyWAstickersApp;
+package com.skstudio.lovestickers;
 
 import android.view.LayoutInflater;
 import android.view.View;

@@ -1,4 +1,4 @@
-package com.skstudio.BabyWAstickersApp;
+package com.skstudio.lovestickers;
 
 import android.content.Context;
 import android.content.Intent;
