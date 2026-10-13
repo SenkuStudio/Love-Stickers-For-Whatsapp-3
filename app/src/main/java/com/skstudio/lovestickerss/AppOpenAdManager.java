@@ -1,4 +1,4 @@
-package com.skstudio.lovestickers;
+package com.skstudio.lovestickerss;
 
 import android.app.Activity;
 import android.app.Application;

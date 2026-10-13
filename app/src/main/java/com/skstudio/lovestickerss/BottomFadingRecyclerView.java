@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.lovestickers;
+package com.skstudio.lovestickerss;
 
 import android.content.Context;
 import android.util.AttributeSet;

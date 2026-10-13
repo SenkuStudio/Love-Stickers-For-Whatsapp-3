@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.lovestickers;
+package com.skstudio.lovestickerss;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -18,7 +18,7 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.skstudio.lovestickers.utils.StickerExportHelper;
+import com.skstudio.lovestickerss.utils.StickerExportHelper;
 
 import androidx.annotation.NonNull;
 
@@ -38,21 +38,21 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import static com.skstudio.lovestickers.StickerContentProvider.ANDROID_APP_DOWNLOAD_LINK_IN_QUERY;
-import static com.skstudio.lovestickers.StickerContentProvider.ANIMATED_STICKER_PACK;
-import static com.skstudio.lovestickers.StickerContentProvider.AVOID_CACHE;
-import static com.skstudio.lovestickers.StickerContentProvider.IMAGE_DATA_VERSION;
-import static com.skstudio.lovestickers.StickerContentProvider.IOS_APP_DOWNLOAD_LINK_IN_QUERY;
-import static com.skstudio.lovestickers.StickerContentProvider.LICENSE_AGREENMENT_WEBSITE;
-import static com.skstudio.lovestickers.StickerContentProvider.PRIVACY_POLICY_WEBSITE;
-import static com.skstudio.lovestickers.StickerContentProvider.PUBLISHER_EMAIL;
-import static com.skstudio.lovestickers.StickerContentProvider.PUBLISHER_WEBSITE;
-import static com.skstudio.lovestickers.StickerContentProvider.STICKER_FILE_EMOJI_IN_QUERY;
-import static com.skstudio.lovestickers.StickerContentProvider.STICKER_FILE_NAME_IN_QUERY;
-import static com.skstudio.lovestickers.StickerContentProvider.STICKER_PACK_ICON_IN_QUERY;
-import static com.skstudio.lovestickers.StickerContentProvider.STICKER_PACK_IDENTIFIER_IN_QUERY;
-import static com.skstudio.lovestickers.StickerContentProvider.STICKER_PACK_NAME_IN_QUERY;
-import static com.skstudio.lovestickers.StickerContentProvider.STICKER_PACK_PUBLISHER_IN_QUERY;
+import static com.skstudio.lovestickerss.StickerContentProvider.ANDROID_APP_DOWNLOAD_LINK_IN_QUERY;
+import static com.skstudio.lovestickerss.StickerContentProvider.ANIMATED_STICKER_PACK;
+import static com.skstudio.lovestickerss.StickerContentProvider.AVOID_CACHE;
+import static com.skstudio.lovestickerss.StickerContentProvider.IMAGE_DATA_VERSION;
+import static com.skstudio.lovestickerss.StickerContentProvider.IOS_APP_DOWNLOAD_LINK_IN_QUERY;
+import static com.skstudio.lovestickerss.StickerContentProvider.LICENSE_AGREENMENT_WEBSITE;
+import static com.skstudio.lovestickerss.StickerContentProvider.PRIVACY_POLICY_WEBSITE;
+import static com.skstudio.lovestickerss.StickerContentProvider.PUBLISHER_EMAIL;
+import static com.skstudio.lovestickerss.StickerContentProvider.PUBLISHER_WEBSITE;
+import static com.skstudio.lovestickerss.StickerContentProvider.STICKER_FILE_EMOJI_IN_QUERY;
+import static com.skstudio.lovestickerss.StickerContentProvider.STICKER_FILE_NAME_IN_QUERY;
+import static com.skstudio.lovestickerss.StickerContentProvider.STICKER_PACK_ICON_IN_QUERY;
+import static com.skstudio.lovestickerss.StickerContentProvider.STICKER_PACK_IDENTIFIER_IN_QUERY;
+import static com.skstudio.lovestickerss.StickerContentProvider.STICKER_PACK_NAME_IN_QUERY;
+import static com.skstudio.lovestickerss.StickerContentProvider.STICKER_PACK_PUBLISHER_IN_QUERY;
 
 class StickerPackLoader {
 

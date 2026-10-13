@@ -1,4 +1,4 @@
-package com.skstudio.lovestickers.utils;
+package com.skstudio.lovestickerss.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;

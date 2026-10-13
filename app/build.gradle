@@ -2,15 +2,15 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.skstudio.lovestickers"
+    namespace "com.skstudio.lovestickerss"
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.skstudio.lovestickers"
-        minSdkVersion 23
+        applicationId "com.skstudio.lovestickerss"
+        minSdkVersion 24
         targetSdk 36
-        versionCode 27
-        versionName "27.1.7"
+        versionCode 1
+        versionName "1.1.7"
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

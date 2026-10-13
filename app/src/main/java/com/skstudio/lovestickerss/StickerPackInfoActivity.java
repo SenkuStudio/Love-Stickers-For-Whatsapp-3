@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.lovestickers;
+package com.skstudio.lovestickerss;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -33,7 +33,7 @@ import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
-import com.skstudio.lovestickers.StickerPackDetailsActivity;
+import com.skstudio.lovestickerss.StickerPackDetailsActivity;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 

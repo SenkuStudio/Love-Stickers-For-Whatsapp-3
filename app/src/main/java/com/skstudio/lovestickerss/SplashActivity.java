@@ -1,4 +1,4 @@
-package com.skstudio.lovestickers;
+package com.skstudio.lovestickerss;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;

@@ -60,7 +60,7 @@
             tools:ignore="UnusedAttribute">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.skstudio.lovestickers.StickerPackListActivity" />
+                android:value="com.skstudio.lovestickerss.StickerPackListActivity" />
         </activity>
         <activity
             android:name=".StickerPackInfoActivity"
@@ -69,7 +69,7 @@
             tools:ignore="UnusedAttribute">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.skstudio.lovestickers.StickerPackDetailsActivity" />
+                android:value="com.skstudio.lovestickerss.StickerPackDetailsActivity" />
         </activity>
 
         <provider

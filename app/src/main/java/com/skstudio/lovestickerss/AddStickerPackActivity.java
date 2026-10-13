@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.lovestickers;
+package com.skstudio.lovestickerss;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -22,7 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
-import com.skstudio.lovestickers.StickerPackDetailsActivity;
+import com.skstudio.lovestickerss.StickerPackDetailsActivity;
 
 public abstract class AddStickerPackActivity extends BaseActivity {
     private static final int ADD_PACK = 200;

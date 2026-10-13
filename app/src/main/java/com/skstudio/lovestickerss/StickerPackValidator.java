@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package com.skstudio.lovestickers;
+package com.skstudio.lovestickerss;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -18,7 +18,7 @@ import android.webkit.URLUtil;
 
 import androidx.annotation.NonNull;
 
-import com.skstudio.lovestickers.StickerPack;
+import com.skstudio.lovestickerss.StickerPack;
 import com.facebook.animated.webp.WebPImage;
 import com.facebook.imagepipeline.common.ImageDecodeOptions;
 
